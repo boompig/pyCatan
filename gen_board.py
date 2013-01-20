@@ -1,3 +1,8 @@
+#############################
+#	Written by Daniel Kats	#
+#	December 25, 2012		#
+#############################
+
 '''
 This file is concerned with generating the board.
 1. Catan board w/ Resources
@@ -24,6 +29,8 @@ from Tkinter import *
 from catan_gen import CatanConstants, CatanRenderConstants
 import random
 from sys import exit as sys_exit
+from hex import Hex
+from collections import deque
 
 def get_tkinter_coords(normal_person_coords):
 	'''Works on lists, too.'''
@@ -161,7 +168,10 @@ def draw_token(canvas, hex_v, number):
 		outline="black", 
 		fill="white"
 	)
-	canvas.create_text(adjusted_center, text=str(number))
+
+	t = CatanConstants.token_map[number]
+	canvas.create_text(adjusted_center, text=str(t))
+
 		
 def draw_hex_latice(canvas, hex_latice_coords):
 	deck = CatanConstants.get_resource_distribution_pool()
@@ -172,6 +182,106 @@ def draw_hex_latice(canvas, hex_latice_coords):
 		hex_latice.append(draw_hex_row(canvas, hex_row_coords, deck))
 		
 	return hex_latice
+
+class MapGen():
+	'''Engine for generating Catan maps.'''
+
+	def __init__(self):
+		self._decr_set = set([1, 2, 4, 6])
+
+	def gen(self):
+		# this is a mapping of rows to hexes...
+		self._board = []
+		
+		# create hexes with resources, shuffle
+		deck = self._make_deck()
+
+		# arrange deck on the board (so create placement)
+		self._place_tiles(deck)
+
+		# assign tokens
+		self._assign_tokens()
+
+		# and draw it
+		self.draw()
+
+	def _assign_tokens(self):
+		'''Assign tokens to the tiles on the board.'''
+
+		# a reversed list of letters (so pop operation works)
+		letters = deque(reversed(sorted(CatanConstants.token_map.keys())))
+		unplaced_layout = { row : col for row, col in enumerate(CatanConstants.tile_layout) }
+
+		# start in corner (0, 2)
+		row = 2
+		col = 0
+		outside_radius = 0
+		print min(unplaced_layout.keys())
+		
+		# do this for all the letters
+		while len(letters) > 0:
+			print letters[-1]
+			print "(%d, %d)" % (col, row)
+			print unplaced_layout
+			
+			# withdraw a letter from the map
+			if self._board[row][col].get_resource() != "desert":
+				#self._board[row][col].set_token(CatanConstants.token_map[letters.pop()])
+				self._board[row][col].set_token(letters.pop())
+			
+			unplaced_layout[row] -= 1
+
+			if unplaced_layout[row] == 0:
+				del(unplaced_layout[row])
+
+			if len(unplaced_layout) > 0:
+				row, col = self._get_next_tile(row, col, unplaced_layout)
+
+
+	def _get_next_tile(self, row, col, unplaced_layout):
+		# calculate next tile position
+		if row <= min(unplaced_layout.keys()) - 1 and col >= 0:
+			# reverse direction
+			print "changing direction"
+			col = -1 * col - 1
+		elif row >= max(unplaced_layout.keys()) + 1 and col < 0:
+			col = (1 + col) * -1
+
+		if col >= 0:
+			row -= 1
+		elif col < 0:
+			row += 1
+
+		if row == 2 and col >= 0:
+			col += 1
+
+		if row in unplaced_layout:
+			return (row, col)
+		else:
+			return self._get_next_tile(row, col, unplaced_layout)
+
+	def _place_tiles(self, deck):
+		'''Place tiles on the board.'''
+
+		for row_num, num_cols in enumerate(CatanConstants.tile_layout):
+			row = []
+			self._board.append(row)
+
+			for col in range(num_cols):
+				row.append(Hex(deck.pop()))
+		
+	def _make_deck(self):
+		'''Return a shuffled deck of unplaced resources.'''
+
+		deck = CatanConstants.get_resource_distribution_pool()
+		random.shuffle(deck)
+		return deck
+
+	def draw(self):
+		'''Render the board.'''
+
+		pass
+		
 		
 class CatanApp():
 	'''The Catan App (for now).
@@ -224,9 +334,25 @@ class CatanApp():
 	
 	def run(self):
 		self._master.mainloop()
-		
-if __name__ == "__main__":
+	
+def gen_map():
+	mg = MapGen()
+	mg.gen()
+
+	b = mg._board
+
+	for row in b:
+		for col in row:
+			print col.get_token(), 
+		print ""
+
+def render_map():
 	app = CatanApp()
 	app.run()
+
+if __name__ == "__main__":
+	#render_map()
+	gen_map()
+
 	
 	
