@@ -140,7 +140,7 @@ def draw_token_dots(canvas, pos, n, color):
 	'''Draw the dots for the given hex'''
 	
 	# number of dots to draw
-	num_dots = 6 - abs(7 - n)
+	num_dots = CatanUtils.get_num_token_dots(n)
 	y_offset = 12 # to get below text
 	pos = (pos[0], pos[1] + y_offset)
 	x_offset = 8 # has to be even number
@@ -199,7 +199,7 @@ class CatanApp():
 		# do all 8
 		for i in range(8):
 			c = self.players[self._turn]
-			v = self._map.ai.get_random_settlement()
+			v = self._map.ai.get_best_settlement()
 			self.add_settlement(None, v)
 			road = self._map.ai.get_random_road_from_settlement(v)
 			
@@ -397,7 +397,7 @@ class CatanApp():
 														)
 		
 		# this is the notifications area
-		self._note = self._canvas.create_text(600, 30, width=100)
+		self._note = self._canvas.create_text(600, 30, width=150)
 		self._state = "first settlement placement"
 		self.act_on_start_state()
 		

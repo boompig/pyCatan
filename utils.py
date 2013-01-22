@@ -12,3 +12,9 @@ class CatanUtils():
         '''Works on lists, too.'''
         
         return reduce(tuple.__add__, normal_person_coords)
+    
+    @staticmethod
+    def get_num_token_dots(num):
+        '''Return the number of dots on the token with given number'''
+        
+        return 6 - abs(7 - num)

@@ -7,6 +7,7 @@
 #	IMPORTS		#
 #################
 from catan_gen import CatanConstants
+from utils import CatanUtils
 
 class Hex():
 	'''
@@ -41,6 +42,14 @@ class Hex():
 			return "DESERT"
 		else:
 			return self._t
+		
+	def get_num_dots(self):
+		'''Return the number of dots on the token for this hex.'''
+		
+		if self._n is None:
+			return 0
+		else:
+			return CatanUtils.get_num_token_dots(self._n)
 
 	def get_vertex(self, index):
 		if isinstance(index, int):

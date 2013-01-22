@@ -170,6 +170,8 @@ class MapGen():
         # this is the available set of nodes on which settlements can be built
         self.available_settlement_set = self._vertex_set.copy()
         
+        self.ai.prepare()
+        
     def cull_bad_settlement_vertices(self, v):
         '''Given that a settlement was built on vertex v, remove adjacent vertices from the
         set of viable building nodes for settlements. Also remove that vertex.'''
