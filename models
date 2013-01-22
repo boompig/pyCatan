@@ -6,4 +6,16 @@ b) each hex stores all its vertices
 c) _settlements maps vertices to settlements/cities (tuple of player color and level)
 ==> for r in resource_map[number]:
 		for v in r.get_vertices():
-			for color 
+			if v in settlements:
+				if settlements[v].is_city():
+					# produce 2
+				else:
+					# produce 1
+					
+2. How to build settlements always 2 away from each other
+=> cannot be next to each other
+=> have to be able to get neighbouring vertices
+
+3. How to build roads next to settlements
+=> must be same color as settlement
+=> check both extremities

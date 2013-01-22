@@ -238,19 +238,27 @@ class CatanApp():
 			# disable roads
 			for road in self._canvas.find_withtag("road"):
 				self._canvas.itemconfigure(road, state=DISABLED)
+			# disable city upgrades
+			for s in self._canvas.find_withtag("settlement"):
+				self._canvas.itemconfigure(s, state=DISABLED)
+			for s in self._canvas.find_withtag("settlement_placeholder"):
+				self._canvas.itemconfigure(s, state=NORMAL)
 		elif self._state in ["first road placement", "second road placement"]:
 			for s in self._canvas.find_withtag("settlement"):
 				self._canvas.itemconfigure(s, state=DISABLED)
-			for city in self._canvas.find_withtag("settlement"):
+			for city in self._canvas.find_withtag("city"):
 				self._canvas.itemconfigure(city, state=DISABLED)
 				
-	def post_status_note(self):
-		if "settlement placement" in self._state:
-			t = "Place a settlement"
-		elif "road placement" in self._state:
-			t = "Place a road"
-		elif self._state == "gameplay":
-			t = "Done with initial placements!"
+	def post_status_note(self, msg=None):
+		if msg:
+			t = msg
+		else:
+			if "settlement placement" in self._state:
+				t = "Place a settlement"
+			elif "road placement" in self._state:
+				t = "Place a road"
+			elif self._state == "gameplay":
+				t = "Done with initial placements!"
 			
 		self._canvas.itemconfigure(self._note, text=t)
 				
@@ -260,6 +268,8 @@ class CatanApp():
 		if self._state in ["first settlement placement", "second settlement placement"]:
 			for road in self._canvas.find_withtag("road"):
 				self._canvas.itemconfigure(road, state=NORMAL)
+			for city in self._canvas.find_withtag("city"):
+				self._canvas.itemconfigure(city, state=NORMAL)
 		elif self._state in ["first road placement", "second road placement"]:
 			for s in self._canvas.find_withtag("settlement"):
 				self._canvas.itemconfigure(s, state=NORMAL)
@@ -381,24 +391,31 @@ class CatanApp():
 		'''Build a road between two vertices in response to user click.'''
 		
 		color = self.players[self._turn]
-		print "Building {} road between {} and {}".format(color, v1, v2)
-		tag = "road_placeholder_{}_{}_{}_{}".format(v1[0], v1[1], v2[0], v2[1])
 		
-		self._canvas.itemconfigure(self._roads[(v1, v2)], fill=color, outline="black")
-		self._canvas.dtag(self._roads[(v1, v2)], tag)
-		
-		if self._state == "first road placement":
-			if self._turn == 3:
-				self.change_to_state("second settlement placement")
-			else:
-				self.change_status_turn()
-				self.change_to_state("first settlement placement")
-		elif self._state == "second road placement":
-			if self._turn == 0:
-				self.change_to_state("gameplay")
-			else:
-				self.change_status_turn(True)
-				self.change_to_state("second settlement placement")
+		if self._map.add_road(v1, v2, color):
+			print "Building {} road between {} and {}".format(color, v1, v2)
+			tag = "road_placeholder_{}_{}_{}_{}".format(v1[0], v1[1], v2[0], v2[1])
+			
+			self._canvas.itemconfigure(self._roads[(v1, v2)], fill=color, outline="black")
+			self._canvas.dtag(self._roads[(v1, v2)], tag)
+			
+			if self._state == "first road placement":
+				if self._turn == 3:
+					self.change_to_state("second settlement placement")
+				else:
+					self.change_status_turn()
+					self.change_to_state("first settlement placement")
+			elif self._state == "second road placement":
+				if self._turn == 0:
+					self.change_to_state("gameplay")
+				else:
+					self.change_status_turn(True)
+					self.change_to_state("second settlement placement")
+		else:
+			msg = "Road must be attached to a settlement."
+			print "Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg
+			self.post_status_note(msg)
+			
 	
 	def draw_settlement_node(self, canvas, v):
 		'''Draw an invisible settlement node at the given vertex.
@@ -411,7 +428,7 @@ class CatanApp():
 		   v[1] - padding,
 		   v[0] + padding,
 		   v[1] + padding, 
-		   tags=("settlement", tag),
+		   tags=("settlement", tag, "settlement_placeholder"),
 		   fill="", # transparent fill
 		   outline="" # no outline
 		)
@@ -424,27 +441,34 @@ class CatanApp():
 		'''Add a settlement at the given vertex in response to user click.'''
 		
 		color = self.players[self._get_turn()]
-		print "Building {} settlement at {}".format(color, v)
-		
-		# TODO change the color to reflect the color of the player
-		# TODO use sprites instead of ovals
-		# draw the settlement oval
-		self._canvas.itemconfigure(self._settlements[v], fill=color)
-		self._canvas.itemconfigure(self._settlements[v], outline="black")
-		
-		# create new callback
-		#TODO have a smarter coloring system
-		f = lambda e: self.add_city(e, v, color)
-		tag = "settlement_oval_{}_{}".format(*v)
-		self._canvas.tag_bind(tag, "<Button>", func=f)
 		
 		# reflect changes in the model
-		self._map.add_settlement(v, color)
-		
-		if self._state == "first settlement placement":
-			self.change_to_state("first road placement")
-		elif self._state == "second settlement placement":
-			self.change_to_state("second road placement")
+		result = self._map.add_settlement(v, color)
+		if result:
+			print "Building {} settlement at {}".format(color, v)
+			
+			# TODO change the color to reflect the color of the player
+			# TODO use sprites instead of ovals
+			# draw the settlement oval
+			self._canvas.itemconfigure(self._settlements[v], fill=color)
+			self._canvas.itemconfigure(self._settlements[v], outline="black")
+			self._canvas.dtag(self._settlements[v], "settlement_placeholder")
+			
+			# add another tag
+			
+			# create new callback
+			#TODO have a smarter coloring system
+			f = lambda e: self.add_city(e, v, color)
+			tag = "settlement_oval_{}_{}".format(*v)
+			self._canvas.tag_bind(tag, "<Button>", func=f)
+			
+			if self._state == "first settlement placement":
+				self.change_to_state("first road placement")
+			elif self._state == "second settlement placement":
+				self.change_to_state("second road placement")
+		else:
+			print "Failed to build {} settlement at {}".format(color, v)
+			self.post_status_note("That building spot is too close to an existing settlement")
 			
 	def change_to_state(self, new_state):
 		'''Move from state in self._state to new_state.'''

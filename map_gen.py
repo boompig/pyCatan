@@ -11,6 +11,9 @@ from utils import CatanUtils
 from player import Player
 #from gen_board import CatanApp
 
+class SettlementPlacementException(Exception):
+    pass
+
 class MapGen():
     '''Engine for generating Catan maps.'''
 
@@ -138,12 +141,32 @@ class MapGen():
         self._create_road_set()
         
         self._settlements = {}
+        self._roads = set([]) 
         
     def get_nodes(self):
         return self._vertex_set
+    
+    def add_road(self, v1, v2, color):
+        '''Add a road of the given color to the map.
+        Road spans between v1 and v2.'''
+        
+        if (v1 not in self._settlements and v2 not in self._settlements) or \
+           (v1 in self._settlements and self._settlements[v1][1] != color) or \
+           (v2 in self._settlements and self._settlements[v2][1] != color):
+            return False
+        else:
+            self._roads.update((v1, v2))
+            return True
         
     def add_settlement(self, v, color):
         '''Add a settlement of the given color to the map.'''
+        
+        #TODO first do a check if close to another settlement
+        adjacent_v_set = self.get_adjacent_vertices(v)
+        
+        for adjacent_v in adjacent_v_set:
+            if adjacent_v in self._settlements:
+                return False
         
         if v in self._vertex_set:
             self._settlements[v] = ("s", color)
