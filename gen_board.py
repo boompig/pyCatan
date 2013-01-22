@@ -96,7 +96,7 @@ def draw_hex(canvas, hex):
 	
 	draw_token(canvas, hex)
 		
-def draw_token(canvas, hex):
+def draw_token(canvas, hex, draw_letter=False):
 	'''Given the hex coords, draw the token.'''
 	
 	# TODO move under class
@@ -108,12 +108,13 @@ def draw_token(canvas, hex):
 		return 
 	
 	padding = 5
+	y_offset = 4 # how much above the center it should be
 	
 	center = ((hex_v[0][0] + hex_v[4][0]) / 2, (hex_v[1][1] + hex_v[-1][1]) / 2)
 	
 	adjusted_center = (
 		hex_v[1][0] + CatanApp.major_horiz_dist / 2,
-		center[1],
+		center[1] - y_offset,
 	)					
 	
 	canvas.create_oval(
@@ -125,8 +126,50 @@ def draw_token(canvas, hex):
 		fill="white"
 	)
 
-	canvas.create_text(adjusted_center, text=str(hex.get_number()))
+	n = hex.get_number()
+	c = "red" if n in [6, 8] else "black"
+	
+	canvas.create_text(adjusted_center, text=str(n), fill=c)
+	
+	if draw_letter:
+		canvas.create_text((adjusted_center[0], adjusted_center[1] - 12), text=hex.get_token())
+	
+	draw_token_dots(canvas,  adjusted_center, n, c)
+	
+def draw_token_dots(canvas, pos, n, color):
+	'''Draw the dots for the given hex'''
+	
+	# number of dots to draw
+	num_dots = 6 - abs(7 - n)
+	y_offset = 12 # to get below text
+	pos = (pos[0], pos[1] + y_offset)
+	x_offset = 8 # has to be even number
+	
+	if num_dots % 2:
+		# create a central dot
+		draw_token_dot(canvas, pos, color)
 		
+		# draw side dots
+		for i in range(num_dots / 2):
+			draw_token_dot(canvas, (pos[0] + (i + 1) * x_offset, pos[1]), color)
+			draw_token_dot(canvas, (pos[0] - (i + 1) * x_offset, pos[1]), color)
+	else:
+		for i in range(num_dots / 2):
+			draw_token_dot(canvas, (pos[0] + (i + .5) * x_offset, pos[1]), color)
+			draw_token_dot(canvas, (pos[0] - (i + .5) * x_offset, pos[1]), color)
+	
+def draw_token_dot(canvas, pos, color):
+	radius = 2
+	
+	canvas.create_oval(
+		pos[0] - radius, 
+		pos[1] - radius,
+		pos[0] + radius,
+		pos[1] + radius,
+		fill=color,
+		outline=""
+	)
+	
 class CatanApp():
 	'''The Catan App (for now).
 	For now side distances are determined statically. Can dynamically allocate them at a later point.'''
@@ -149,6 +192,32 @@ class CatanApp():
 		
 	def _get_turn(self):
 		return self._turn
+	
+	def automate_setup(self):
+		'''Create a random setup of the first two roads and settlements.'''
+		
+		# do all 8
+		for i in range(8):
+			c = self.players[self._turn]
+			v = self._map.ai.get_random_settlement()
+			self.add_settlement(None, v)
+			road = self._map.ai.get_random_road_from_settlement(v)
+			
+			if not road:
+				print "ERROR! Could not find a place to put a road"
+			else:
+				v1, v2 = road
+			
+			if v1[0] > v2[0]:
+				v1, v2 = v2, v1 # switch places to correspond with the way roads are indexed
+			
+#			if (v1, v2) not in self._roads:
+#				print "Tried to build road from {} to {}".format(v1, v2)
+#				for k in self._roads.keys():
+#					if k[0] == v1 or k[1] == v1:
+#						print k
+			
+			self.add_road(None, v1, v2)
 	
 	def __init__(self):
 		self._master = Tk()
@@ -174,6 +243,7 @@ class CatanApp():
 		frame.master.rowconfigure(0, weight=1)
 
 		frame1 = frame
+		self._frame = frame
 
 		# canvas
 		w = Canvas(frame1, width=CatanApp.width, height=CatanApp.height)
@@ -191,15 +261,19 @@ class CatanApp():
 		#self.play_game()
 		self.draw_status_area()
 		self._roll_var = StringVar()
-		b = Button(frame1, text="Roll!", command=self.roll)
-		b.place(x=600, y=20)
-		b.pack()
+		self._roll_button = Button(
+			frame1, 
+			text="End turn", 
+			command=self.roll,
+			state=DISABLED # initially hide it
+		)
+		self._roll_button.place(x=600, y=20)
+		self._roll_button.pack()
 		l = Label(frame1, textvar=self._roll_var)
 		l.place(x=600, y=120)
 		l.pack()
 		
-		#self.place_initial_settlements()
-			
+		self.automate_setup()
 		
 	def place_initial_settlements(self):
 		'''Place the initial settlements.'''
@@ -214,19 +288,33 @@ class CatanApp():
 			pass
 		
 	def roll(self):
+		'''End the previous turn, then roll the dice.'''
+		
+		# change turn
+		self.change_status_turn()
+		
+		# roll the dice
 		r1 = random.randint(1, 6)
 		r2 = random.randint(1, 6)
 		n = r1 + r2
+		
+		# display dice roll
 		self._roll_var.set("Last roll: {}".format(n))
 		
-		# now write what is being generated
+		# compute produced resources
 		d = self._map.get_resources_produced(n)
-		#CatanUtils.print_dict(d)
+		
+		# update player hands on screen
 		for c in self.players:
-			self._canvas.itemconfigure(
-									self._hands[c], 
-									text=self._map.get_player(c).get_printable_hand()
-									)
+			self.update_hand(c)
+			
+	def update_hand(self, color):
+		'''Update the hand displayed for player of the given color.'''
+		
+		self._canvas.itemconfigure(
+			self._hands[color], 
+			text=self._map.get_player(color).get_printable_hand()
+		)
 		
 	def act_on_start_state(self):
 		'''Set the state notification to the correct value.'''
@@ -248,6 +336,14 @@ class CatanApp():
 				self._canvas.itemconfigure(s, state=DISABLED)
 			for city in self._canvas.find_withtag("city"):
 				self._canvas.itemconfigure(city, state=DISABLED)
+		elif self._state == "gameplay":
+			# disable all buildings
+			#for b in self._canvas.find_withtag("building"):
+			#	self._canvas.itemconfigure(b, state=DISABLED)
+			# re-enable the roll button
+			self._roll_button.config(state=NORMAL)
+			#TODO for some reason the button is not being enabled
+			print "Enabled roll button"
 				
 	def post_status_note(self, msg=None):
 		if msg:
@@ -270,11 +366,23 @@ class CatanApp():
 				self._canvas.itemconfigure(road, state=NORMAL)
 			for city in self._canvas.find_withtag("city"):
 				self._canvas.itemconfigure(city, state=NORMAL)
+				
+			if "second" in self._state:
+				# note the turn hasn't changed
+				c = self.players[self._turn]
+				second_settlement =  self._map.get_player(c).get_settlement(1)
+				self._map.produce(second_settlement)
+				self.update_hand(c)
+				
 		elif self._state in ["first road placement", "second road placement"]:
 			for s in self._canvas.find_withtag("settlement"):
 				self._canvas.itemconfigure(s, state=NORMAL)
 			for city in self._canvas.find_withtag("city"):
 				self._canvas.itemconfigure(city, state=NORMAL)
+		elif self._state == "gameplay":
+			# re-enable all buildings
+			for b in self._canvas.find_withtag("building"):
+				self._canvas.itemconfigure(b, state=NORMAL)
 		
 		
 	def draw_status_area(self):
@@ -303,13 +411,6 @@ class CatanApp():
 	def change_status_turn(self, decr=False):
 		self._next_turn(decr)
 		self._canvas.itemconfigure(self._status_rect, fill=self.players[self._turn])
-		
-	def play_game(self):
-		
-		pass
-		
-#		while(True):
-			
 		
 	def draw_board(self, canvas):
 		'''Now we draw the board...'''
@@ -379,7 +480,7 @@ class CatanApp():
 		
 		self._roads[(v1, v2)] = canvas.create_polygon(
 			*CatanUtils.get_tkinter_coords(v),
-			tags=("road", tag),
+			tags=("road", tag, "building"),
 			fill="", # transparent fill
 		   	outline="" # no outline
 		)
@@ -416,6 +517,14 @@ class CatanApp():
 			print "Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg
 			self.post_status_note(msg)
 			
+	def cull_adjacent_settlement_nodes(self, canvas, v):
+		'''Remove all settlement nodes which are adjacent to vertex v.'''
+		
+		# first, get adjacent vertices
+		adjacent_v_set = self._map.get_adjacent_vertices(v)
+		for adjacent_v in adjacent_v_set:
+			s = self._settlements[adjacent_v] # these are ovals
+			canvas.delete(s) # delete the oval
 	
 	def draw_settlement_node(self, canvas, v):
 		'''Draw an invisible settlement node at the given vertex.
@@ -428,7 +537,7 @@ class CatanApp():
 		   v[1] - padding,
 		   v[0] + padding,
 		   v[1] + padding, 
-		   tags=("settlement", tag, "settlement_placeholder"),
+		   tags=("settlement", tag, "settlement_placeholder", "building"),
 		   fill="", # transparent fill
 		   outline="" # no outline
 		)
@@ -454,13 +563,13 @@ class CatanApp():
 			self._canvas.itemconfigure(self._settlements[v], outline="black")
 			self._canvas.dtag(self._settlements[v], "settlement_placeholder")
 			
-			# add another tag
-			
 			# create new callback
-			#TODO have a smarter coloring system
 			f = lambda e: self.add_city(e, v, color)
 			tag = "settlement_oval_{}_{}".format(*v)
 			self._canvas.tag_bind(tag, "<Button>", func=f)
+			
+			# no need for this
+			#self.cull_adjacent_settlement_nodes(self._canvas, v)
 			
 			if self._state == "first settlement placement":
 				self.change_to_state("first road placement")
@@ -493,7 +602,7 @@ class CatanApp():
 		   v[1] - padding,
 		   v[0] + padding,
 		   v[1] + padding, 
-		   tags=("city", tag),
+		   tags=("city", tag, "building"),
 		   fill=color, # transparent fill
 		   outline="black" # no outline
 		)

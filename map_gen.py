@@ -9,6 +9,8 @@ from catan_gen import CatanConstants
 from hex import Hex
 from utils import CatanUtils
 from player import Player
+from settlement import Settlement
+from ai import AI
 #from gen_board import CatanApp
 
 class SettlementPlacementException(Exception):
@@ -20,6 +22,7 @@ class MapGen():
     def __init__(self):
         self._decr_set = set([1, 2, 4, 6])
         self._players = {}
+        self.ai = AI(self)
 
     def gen(self):
         # this is a mapping of rows to hexes...
@@ -62,14 +65,14 @@ class MapGen():
         
         # do this for all the letters
         while len(letters) > 0:
-            #print letters[-1]
-            #print "(%d, %d)" % (col, row)
-            #print unplaced_layout
             
             # withdraw a letter from the map
             if self._board[row][col].get_resource() != "desert":
-                #self._board[row][col].set_token(CatanConstants.token_map[letters.pop()])
-                self._board[row][col].set_token(letters.pop())
+                l = letters.pop()
+                #print "{} ==> {}".format((row, col), l)
+                self._board[row][col].set_token(l)
+            #else:
+            #print "desert at {}".format((row, col))
             
             unplaced_layout[row] -= 1
 
@@ -81,26 +84,45 @@ class MapGen():
 
 
     def _get_next_tile(self, row, col, unplaced_layout):
-        # calculate next tile position
-        if row <= min(unplaced_layout.keys()) - 1 and col >= 0:
-            # reverse direction
-            #print "changing direction"
-            col = -1 * col - 1
-        elif row >= max(unplaced_layout.keys()) + 1 and col < 0:
-            col = (1 + col) * -1
-
-        if col >= 0:
-            row -= 1
-        elif col < 0:
-            row += 1
-
-        if row == 2 and col >= 0:
-            col += 1
-
-        if row in unplaced_layout:
-            return (row, col)
+        '''Calculate next tile position from this tile position when placing tokens.'''
+        
+        if row == 4 and col == 0:
+            return (3, 0) # starting tile for loop 1
+        elif row not in [3, 5] and col in [0, -1]:
+            loop_i = 0
+        elif row == 5 and col == 0:
+            return (4, 1) # only element in loop 2
         else:
-            return self._get_next_tile(row, col, unplaced_layout)
+            loop_i = 1
+        
+        if loop_i == 0:
+            # change column
+            if row == 8:
+                col = 0
+            elif row == 0:
+                col = -1
+            
+            row_incr = -1 if ((col == 0 and row > 0) or row == 8)  else 1
+            row += row_incr
+            
+            
+            if row in [3, 5]: # skip over these rows
+                row += row_incr
+        elif loop_i == 1:
+            # note the (5, 0) case taken care of above
+            
+            if row == 2:
+                row, col = (3, -1)
+            elif row == 3 and col == 0:
+                row, col = (2, 1)
+            elif row == 3 and col == -1:
+                row, col = (5, -1)
+            elif row == 5 and col == -1:
+                row, col = (6, 1)
+            elif row == 6:
+                row, col = (5, 0)
+            
+        return (row, col)
 
     def _place_tiles(self, deck):
         '''Place tiles on the board.'''
@@ -122,13 +144,15 @@ class MapGen():
     def draw_ascii(self):
         '''Render the board in a terminal.'''
         
+        f = lambda hex: hex.get_token()
+        
         for row in self._board:
             if len(row) == 3:
-                print " ".join([c.get_resource() for c in row])
+                print " ".join([f(c) for c in row])
             elif len(row) == 2:
-                print " " + " ".join([c.get_resource() for c in row]) + " "
+                print " " + " ".join([f(c) for c in row]) + " "
             elif len(row) == 1:
-                print (2 * " ") + row[0].get_resource() + (2 * " ")
+                print (2 * " ") + f(row[0]) + (2 * " ")
                 
     def prepare(self):
         '''Create optimized data structures for easy access to some common game data.'''
@@ -143,6 +167,17 @@ class MapGen():
         self._settlements = {}
         self._roads = set([]) 
         
+        # this is the available set of nodes on which settlements can be built
+        self.available_settlement_set = self._vertex_set.copy()
+        
+    def cull_bad_settlement_vertices(self, v):
+        '''Given that a settlement was built on vertex v, remove adjacent vertices from the
+        set of viable building nodes for settlements. Also remove that vertex.'''
+        
+        adjacent_v_set = set(self.get_adjacent_vertices(v))
+        self.available_settlement_set.difference_update(adjacent_v_set)
+        self.available_settlement_set.discard(v)
+        
     def get_nodes(self):
         return self._vertex_set
     
@@ -151,25 +186,35 @@ class MapGen():
         Road spans between v1 and v2.'''
         
         if (v1 not in self._settlements and v2 not in self._settlements) or \
-           (v1 in self._settlements and self._settlements[v1][1] != color) or \
-           (v2 in self._settlements and self._settlements[v2][1] != color):
+           (v1 in self._settlements and self._settlements[v1].color() != color) or \
+           (v2 in self._settlements and self._settlements[v2].color() != color) or \
+           (v1, v2) in self._roads:
             return False
         else:
             self._roads.update((v1, v2))
+            self.get_player(color).add_road(v1, v2)
             return True
+        
+    def has_road(self, v1, v2):
+        '''Return true iff a road from v1 to v2 has already been built.
+        Also allows for a road from v2 to v1'''
+        
+        if v1[0] > v2[0]:
+            v1, v2 = v2, v1 # switch places
+            
+        return (v1, v2) in self._roads
         
     def add_settlement(self, v, color):
         '''Add a settlement of the given color to the map.'''
         
-        #TODO first do a check if close to another settlement
-        adjacent_v_set = self.get_adjacent_vertices(v)
-        
-        for adjacent_v in adjacent_v_set:
-            if adjacent_v in self._settlements:
-                return False
+        if v not in self.available_settlement_set:
+           return False
         
         if v in self._vertex_set:
-            self._settlements[v] = ("s", color)
+            s = Settlement(v, color) 
+            self._settlements[v] = s # add to the game board
+            self.get_player(color).add_settlement(s) # add to player for record-keeping
+            self.cull_bad_settlement_vertices(v) # make sure nothing can be built around it
             return True
         else:
             return False
@@ -178,8 +223,8 @@ class MapGen():
         '''Add a city of the given color to the map.
         Upgrades existing settlement.'''
         
-        if v in self._settlements and self._settlements[v] == ("s", color):
-            self._settlements[v] = ("c", color)
+        if v in self._settlements and not self._settlements[v].is_city() and self._settlements[v].color() == color:
+            self._settlements[v].upgrade()
             return True
         else:
             return False
@@ -205,6 +250,19 @@ class MapGen():
                     
 #        CatanUtils.print_dict(self._vertex_map)
 
+    def produce(self, s):
+        '''Make the settlement s produce resources.
+        Return a list of the resources produced.'''
+        
+        l = []
+        v = s.vertex()
+        adjacent_hex_list = self._vertex_map[v]
+        for hex in adjacent_hex_list:
+           l.append(hex.get_resource())
+            
+        self._players[s.color()].add_resources(l)
+        return l
+
     def get_resources_produced(self, roll):
         '''For the given roll, return a map of player color to resources produced.'''
         
@@ -219,14 +277,15 @@ class MapGen():
             for v in hex.get_vertices():
                 if v in self._settlements:
                     s = self._settlements[v]
+                    c = s.color()
                     
-                    if s[1] not in d:
-                        d[s[1]] = []
+                    if c not in d:
+                        d[c] = []
                     
-                    if s[0] == "c":
-                        d[s[1]].extend([r, r])
+                    if s.is_city():
+                        d[c].extend([r, r])
                     else:
-                        d[s[1]].append(r)
+                        d[c].append(r)
                         
         # now add these resources to the relevant players
         for p, r_list in d.iteritems():

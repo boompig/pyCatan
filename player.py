@@ -2,13 +2,45 @@ class Player():
 	'''Single-player player.'''
 
 	def __init__(self):
-		pass
+		'''Create a new Catan player.'''
 		
 		self._resources = {}
 		self._vp = 0
+		self._settlements = []
+		self._roads = []
 		
 		# TODO here have stash of settlements, cities, roads that are unbuilt
 		# TODO here have 
+		
+	def add_settlement(self, s):
+		'''Add the given settlement to the list of settlements for this player.'''
+		
+		self._settlements.append(s)
+		
+	def add_road(self, v1, v2):
+		'''Add a road.'''
+		
+		self._roads.append((v1, v2))
+		
+	def get_num_roads(self):
+		'''Return number of roads built by this player.'''
+		
+		return len(self._roads)
+	
+	def get_num_settlements(self):
+		'''Return the number of settlements this player has built.'''
+		
+		return len(self._settlements)
+		
+	def get_settlement(self, i):
+		'''Return settlement at the given index.'''
+		
+		if i >= self._settlements:
+			return None
+		else:
+			return self._settlements[i]
+	
+
 		
 	def add_resources(self, resource_list):
 		'''Collect resources.'''
