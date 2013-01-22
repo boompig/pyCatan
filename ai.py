@@ -32,7 +32,10 @@ class AI():
     def get_random_road_from_settlement(self, v):
         '''Return a random road stemming from settlement located at v.'''
         
-        for v2 in self._board.get_adjacent_vertices(v):
+        adjacent_v_set = self._board.get_adjacent_vertices(v)
+        random.shuffle(adjacent_v_set)
+        
+        for v2 in adjacent_v_set:
             if not self._board.has_road(v, v2):
                return (v, v2) # the road was built
            
