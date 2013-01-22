@@ -4,16 +4,31 @@ class Player():
 	def __init__(self):
 		pass
 		
-		self._resources = []
+		self._resources = {}
 		self._vp = 0
 		
 		# TODO here have stash of settlements, cities, roads that are unbuilt
 		# TODO here have 
 		
-	def collect_resources(self, dice_roll, map):
-		'''Collect resources given the dice roll.'''
+	def add_resources(self, resource_list):
+		'''Collect resources.'''
 		
-		pass
+		for r in resource_list:
+			if r not in self._resources:
+				self._resources[r] = 0
+			self._resources[r] += 1
+		
+		#self._resources.extend(resource_list)
+		
+	def get_printable_hand(self):
+		'''Return resources in the player's hand.'''
+		
+		s = ""
+		
+		for r, n in self._resources.iteritems():
+			s += "{} x {}, ".format(r, n)
+			
+		return s[:-2]
 		
 	def get_resource_random_resource(self):
 		'''Return (discard) random resource.'''

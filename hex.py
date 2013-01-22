@@ -3,6 +3,10 @@
 #	December 25, 2012		#
 #############################
 
+#################
+#	IMPORTS		#
+#################
+from catan_gen import CatanConstants
 
 class Hex():
 	'''
@@ -13,6 +17,8 @@ class Hex():
 	def __init__(self, resource):
 		self._r = resource
 		self._t = None
+		self._n = None
+		self._v = []
 
 	def get_resource(self):
 		return self._r
@@ -25,6 +31,10 @@ class Hex():
 
 	def set_token(self, t):
 		self._t = t
+		self._n = CatanConstants.token_map[self._t]
+		
+	def get_number(self):
+		return self._n
 
 	def get_token(self):
 		if self._t is None:

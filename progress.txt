@@ -1,0 +1,52 @@
+1. Generate a Catan map
+	- TODO ports
+	- done except for ports
+	
+2. Render the Catan map
+	- TODO ports
+	- done except for ports
+	
+3. Settlement / city placement
+	- created map of nodes to hexes
+	- added recognition of nodes clicked
+	- allow placing settlements for one player
+	- allow upgrading to city for one player
+	
+	- TODO charge resources
+	- TODO allow multiple colors
+	
+	- TODO create settlement and city sprites
+	
+	
+4. Resource distribution
+	- created map of numbers to hexes
+	- resources are distributed based on settlement and city placement
+	- cities earn twice as much as settlements
+	
+	- TODO store resources earned somewhere
+	
+5. Road-building
+	- TODO add [invisible] buttons between (adjacent) nodes
+		- this is going to be difficult
+		
+		- adjacent roads
+			- we start with each player having a set of nodes as their road nexi
+			- each road nexi is a valid start-point for a road segment
+			- end-point of road segment must be adjacent to road-nexus chosen
+			
+		
+			- same tile
+				- +- 1 index btw/ nodes (rollover case at 0, but Python allows neg. indexing so no big deal)
+			- different tiles
+				- no such thing, road nexus will always be on same tile
+				- nexus can be on several tiles at once
+	- 
+	
+6. Initial placement
+	- place 1 settlement and 1 city
+	
+	TODO
+		- how to assign multiple tags to canvas item
+		- how to wait for <specific> user input?
+
+
