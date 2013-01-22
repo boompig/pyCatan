@@ -5,12 +5,39 @@ class Player():
 		'''Create a new Catan player.'''
 		
 		self._resources = {}
+		self._num_resources = 0
+		
 		self._vp = 0
 		self._settlements = []
 		self._roads = []
 		
 		# TODO here have stash of settlements, cities, roads that are unbuilt
 		# TODO here have 
+		
+	def get_num_resources(self):
+		'''Return the number of resources in the player's hand.'''
+		
+		return self._num_resources
+		
+	def can_deduct_resources(self, r_list):
+		'''Return True iff can deduct all resources in r_list from this player.'''
+		
+		for r in set(r_list):
+			num = r_list.count(r)
+			if r not in self._resources or self._resources[r] < num:
+				return False
+		return True
+		
+	def deduct_resources(self, r_list):
+		'''Deduct the given resources from the player. If not possible, return False.'''
+		
+		if not self.can_deduct_resources(r_list):
+			return False
+			
+		for r in r_list:
+			self._resources[r] -= 1
+			self._num_resources -= 1
+		return True
 		
 	def add_settlement(self, s):
 		'''Add the given settlement to the list of settlements for this player.'''
@@ -39,8 +66,6 @@ class Player():
 			return None
 		else:
 			return self._settlements[i]
-	
-
 		
 	def add_resources(self, resource_list):
 		'''Collect resources.'''
@@ -49,6 +74,7 @@ class Player():
 			if r not in self._resources:
 				self._resources[r] = 0
 			self._resources[r] += 1
+			self._num_resources += 1
 		
 		#self._resources.extend(resource_list)
 		
@@ -81,6 +107,11 @@ class Player():
 		'''Add given development card dc.'''
 		
 		pass
+	
+	def get_hand(self):
+		'''Return the player's hand.'''
+		
+		return self._resources
 		
 	def discard_resources(self, num):
 		'''Discard num resources.
@@ -88,11 +119,6 @@ class Player():
 		Return the resources.
 		Player chooses this
 		'''
-	
-		pass
-	
-	def add_resource(self, r):
-		'''Add resource r to this player's hand.'''
 	
 		pass
 	

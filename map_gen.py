@@ -170,7 +170,20 @@ class MapGen():
         # this is the available set of nodes on which settlements can be built
         self.available_settlement_set = self._vertex_set.copy()
         
+        # place the robber on the desert hex
+        self._robber_hex = self._resource_map["desert"]
+        
         self.ai.prepare()
+        
+    def deduct_settlement_resources(self, player):
+        '''Deduct resources for settlement construction from the given player.'''
+        
+        return self.deduct_resources(player, CatanConstants.building_costs["settlement"])
+    
+    def deduct_resources(self, player, resource_list):
+        '''Deduct the given resources from the given player.'''
+        
+        return self._players[player].deduct_resources(resource_list)
         
     def cull_bad_settlement_vertices(self, v):
         '''Given that a settlement was built on vertex v, remove adjacent vertices from the
@@ -252,15 +265,22 @@ class MapGen():
                     
 #        CatanUtils.print_dict(self._vertex_map)
 
-    def produce(self, s):
+    def move_robber(self, new_hex):
+        '''Move the robber to the new hex.'''
+        
+        self._robber_hex = new_hex
+
+    def produce(self, s, ignore_robber=False):
         '''Make the settlement s produce resources.
+        Hex with the robber does not produce unless explicitly told (ignore_robber=True).
         Return a list of the resources produced.'''
         
         l = []
         v = s.vertex()
         adjacent_hex_list = self._vertex_map[v]
         for hex in adjacent_hex_list:
-           l.append(hex.get_resource())
+            if hex != self._robber_hex or ignore_robber:
+                l.append(hex.get_resource())
             
         self._players[s.color()].add_resources(l)
         return l
@@ -323,6 +343,17 @@ class MapGen():
             
     def get_roads(self):
         return self._road_set
+    
+    def robber_discard(self):
+        '''Return map of color to number of resources each player must discard.'''
+        
+        d = {}
+        
+        for c, p in self._players.iteritems():
+            if p.get_num_resources() > 7:
+                d[c] = p.get_num_resources() // 2 # explicit integer division
+            
+        return d
                 
     def _create_resource_map(self):
         ''' resource_map maps numbers to list of hexes 
@@ -333,6 +364,7 @@ class MapGen():
         for row in self._board:
             for hex in row:
                 if hex.get_number() is None:
+                    self._resource_map["desert"] = [hex] # this will be the only entry
                     continue
                 elif hex.get_number() not in self._resource_map:
                     self._resource_map[hex.get_number()] = []

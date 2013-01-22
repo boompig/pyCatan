@@ -184,7 +184,7 @@ class CatanApp():
 	settlement_radius = 20
 	city_radius = 22
 	
-	players = ["red", "yellow", "blue", "green"]
+	players = ["red", "gold2", "blue", "green"]
 	
 	def _next_turn(self, decr=False):
 		i=-1 if decr else 1
@@ -273,8 +273,28 @@ class CatanApp():
 		l.place(x=600, y=120)
 		l.pack()
 		
+		self._build_button = Button(
+			frame1, 
+			text="Build settlement", 
+			command=self.allow_build_settlement,
+			state=DISABLED
+		)
+		self._build_button.place(x=600, y=20)
+		self._build_button.pack()
+		
 		self.automate_setup()
 		
+	def allow_build_settlement(self):
+		'''Allow the building of a settlement.'''
+		
+		# check for resources
+		if self._map.deduct_settlement_resources(self.players[self._turn]):
+			print "Entered settlement building mode"
+			self.change_to_state("additional settlement placement")
+		else:
+			print "Failed to enter settlement building mode - not enough resources"
+			self.post_status_note("Failed to enter settlement building mode - not enough resources", error=True)
+			
 	def place_initial_settlements(self):
 		'''Place the initial settlements.'''
 		
@@ -301,19 +321,29 @@ class CatanApp():
 		# display dice roll
 		self._roll_var.set("Last roll: {}".format(n))
 		
-		# compute produced resources
-		d = self._map.get_resources_produced(n)
+		if n == 7:
+			# starting from this player, each player must discard half their hand
+			discard_map = self._map.robber_discard()
+			
+			for i in range(4):
+				c = self.players[self._turn]
+				# this player must discard <x> cards
+				if c in discard_map:
+					self.post_status_note("{} must discard {} cards".format(c.title(), discard_map[c]), True)
+		else:
+			# compute produced resources
+			d = self._map.get_resources_produced(n)
 		
-		# update player hands on screen
-		for c in self.players:
-			self.update_hand(c)
+			# update player hands on screen
+			for c in self.players:
+				self.update_hand(c)
 			
 	def update_hand(self, color):
 		'''Update the hand displayed for player of the given color.'''
 		
 		self._canvas.itemconfigure(
 			self._hands[color], 
-			text=self._map.get_player(color).get_printable_hand()
+			text=self._map.get_player(color).get_printable_hand().replace(",", "\n")
 		)
 		
 	def act_on_start_state(self):
@@ -338,14 +368,22 @@ class CatanApp():
 				self._canvas.itemconfigure(city, state=DISABLED)
 		elif self._state == "gameplay":
 			# disable all buildings
-			#for b in self._canvas.find_withtag("building"):
-			#	self._canvas.itemconfigure(b, state=DISABLED)
+			for b in self._canvas.find_withtag("building"):
+				self._canvas.itemconfigure(b, state=DISABLED)
 			# re-enable the roll button
 			self._roll_button.config(state=NORMAL)
-			#TODO for some reason the button is not being enabled
-			print "Enabled roll button"
+			self._build_button.config(state=NORMAL)
+		elif self._state == "additional settlement placement":
+			self._roll_button.config(state=DISABLED)
+			self._build_button.config(state=DISABLED)
+			for s in self._canvas.find_withtag("settlement"):
+				self._canvas.itemconfigure(s, state=DISABLED)
+			for s in self._canvas.find_withtag("settlement_placeholder"):
+				self._canvas.itemconfigure(s, state=NORMAL)
 				
-	def post_status_note(self, msg=None):
+	def post_status_note(self, msg=None, error=False):
+		c = "red" if error else "black" 
+		
 		if msg:
 			t = msg
 		else:
@@ -356,7 +394,7 @@ class CatanApp():
 			elif self._state == "gameplay":
 				t = "Done with initial placements!"
 			
-		self._canvas.itemconfigure(self._note, text=t)
+		self._canvas.itemconfigure(self._note, text=t, fill=c)
 				
 	def act_on_end_state(self):
 		'''Perform state exit actions.'''
@@ -383,6 +421,8 @@ class CatanApp():
 			# re-enable all buildings
 			for b in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(b, state=NORMAL)
+			self._build_button.config(state=DISABLED)
+			self._roll_button.config(state=DISABLED)
 		
 		
 	def draw_status_area(self):
@@ -391,22 +431,48 @@ class CatanApp():
 		# this is where the turn is
 		self._canvas.create_text(50, 30, text="Current turn:")
 		self._status_rect = self._canvas.create_rectangle(
-														50, 40, 80, 70, 
-														fill=self.players[self._turn], 
-														tag="status_rect"
-														)
+			50, 40, 80, 70, 
+			fill=self.players[self._turn], 
+			tag="status_rect"
+		)
 		
 		# this is the notifications area
-		self._note = self._canvas.create_text(600, 30, width=150)
+		self._note = self._canvas.create_text(580, 30, width=180)
 		self._state = "first settlement placement"
 		self.act_on_start_state()
 		
+		self.draw_hand_area()
+			
+	def draw_hand_area(self):
 		self._hands = {}
 		
 		# this is where the cards are
 		for i, c in enumerate(self.players):
-			self._canvas.create_rectangle(550, 100 * (i + 1), 580, 100 * (i + 1) + 30, fill=c, outline="black")
-			self._hands[c] = self._canvas.create_text(670, 100 * (i + 1), text="", width=150, justify=RIGHT)
+			self._canvas.create_rectangle(550, 120 * (i + 1) - 20, 580, 120 * (i + 1) + 10, fill=c, outline="black")
+			self._hands[c] = self._canvas.create_text(670, 120 * (i + 1), text="", width=150, justify=RIGHT)
+			
+			# create a box around the whole thing
+			self._canvas.create_rectangle(
+				530,
+				120 * (i + 1) - 50,
+				730,
+				120 * (i + 1) + 50,
+				fill="",
+				outline=c,
+				width=1.5
+			)
+			
+		# and a box around everything
+		self._canvas.create_rectangle(
+			525,
+			65,
+			735,
+			535,
+			fill="",
+			outline="black",
+			width=1.5,
+			dash=(2, 4)
+		)
 		
 	def change_status_turn(self, decr=False):
 		self._next_turn(decr)
@@ -515,7 +581,7 @@ class CatanApp():
 		else:
 			msg = "Road must be attached to a settlement."
 			print "Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg
-			self.post_status_note(msg)
+			self.post_status_note(msg, error=True)
 			
 	def cull_adjacent_settlement_nodes(self, canvas, v):
 		'''Remove all settlement nodes which are adjacent to vertex v.'''
@@ -577,7 +643,7 @@ class CatanApp():
 				self.change_to_state("second road placement")
 		else:
 			print "Failed to build {} settlement at {}".format(color, v)
-			self.post_status_note("That building spot is too close to an existing settlement")
+			self.post_status_note("That building spot is too close to an existing settlement", error=True)
 			
 	def change_to_state(self, new_state):
 		'''Move from state in self._state to new_state.'''

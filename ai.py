@@ -79,11 +79,28 @@ class AI():
             s = nexi.pop()
             v1 = s.vertex()
             
+            # TODO replace with get_random_road_from_settlement
+            
             for v2 in self._board.get_adjacent_vertices(v1):
                 if not self._board.has_road(v1, v2):
                    return (v1, v2) # the road was built
                
         # cycled through all possible settlement-road combinations and could not find valid placement
         return False
+    
+    def get_random_discard(self, color, num_discard):
+        '''Discard random cards from the player's hand.
+        Return those cards.'''
+        
+        player = self._board.get_player(color)
+        hand = player.get_hand()[:]
+        gone_list = []
+        
+        for i in range(num_discard):
+            gone_list.append(hand.pop())
+            
+        player.deduct_resources(gone_list)    
+        return gone_list
+            
     
     

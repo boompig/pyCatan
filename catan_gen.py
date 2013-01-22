@@ -105,6 +105,12 @@ def flatten_list(l):
 class CatanConstants():
 	'''Keep constants under one namespace.'''
 	
+	building_costs = {
+		"settlement" : ["wheat", "brick", "sheep", "wood"],
+		"city" : ["wheat"] * 2 + ["ore"] * 3,
+		"road" : ["brick", "wood"]
+	}
+	
 	'''The number of tiles each resource has on a standard Catan board.'''
 	resource_distribution = {
 		"brick" : 3,
