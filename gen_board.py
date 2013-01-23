@@ -400,6 +400,21 @@ class CatanApp():
 		
 		
 		self.automate_setup()
+	
+	def play_dev_card(self):
+		print "Playing dev card..."
+		
+	def buy_dev_card(self):
+		'''User-triggered action to buy a development card.'''
+		
+		color = self.players[self._turn]
+		card = self._map.get_development_card(color)
+		
+		if card is None:
+			self.post_status_note("You cannot afford to buy a development card", True)
+		else:
+			self.post_status_note("Successfully bought development card")
+			print "{} bought development card '{}'".format(color, card)
 		
 	def create_build_buttons(self):
 		'''Create buttons to build various structures.'''
@@ -408,6 +423,15 @@ class CatanApp():
 		
 		for type in ["road", "settlement", "city"]:
 			self.create_build_button(type)
+			
+		self._build_buttons["dev_card"] = Button(
+			self._frame, 
+			text="Buy development card", 
+			state=DISABLED, 
+			command=self.buy_dev_card
+		)
+		
+		self._build_buttons["dev_card"].pack()
 			
 		f = lambda: self.change_to_state("gameplay")
 			
@@ -466,6 +490,7 @@ class CatanApp():
 		
 		# display dice roll
 		self._roll_var.set("Last roll: {}".format(n))
+		self.post_status_note("Rolled %d" % n)
 		
 		if n == 7:
 			# TODO discard cards first

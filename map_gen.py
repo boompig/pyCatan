@@ -23,6 +23,16 @@ class MapGen():
         self._decr_set = set([1, 2, 4, 6])
         self._players = {}
         self.ai = AI(self)
+        
+    def _make_dev_card_deck(self):
+        '''Create a shuffled deck of development cards.'''
+        
+        self._dev_card_deck = []
+        
+        for card, num in CatanConstants.development_cards.iteritems():
+            self._dev_card_deck.extend([card] * num)
+            
+        random.shuffle(self._dev_card_deck)
 
     def gen(self):
         # this is a mapping of rows to hexes...
@@ -39,6 +49,29 @@ class MapGen():
 
         # and draw it
         self.draw()
+        
+        # create development card deck
+        self._make_dev_card_deck()
+        
+    def play_development_card(self, color, card):
+        '''Player with given color plays given card. Process effects.'''
+        
+        pass
+    
+    def get_development_card(self, color):
+        '''Give out a development card to the player if they can afford it.
+        Return the development card, or None if none given.'''
+        
+        p = self.get_player(color)
+        cost = CatanConstants.development_card_cost
+        
+        if p.can_deduct_resources(cost) and len(self._dev_card_deck) > 0:
+            p.deduct_resources(cost)
+            card = self._dev_card_deck.pop()
+            p.add_development_card(card)
+            return card
+        else:
+            return None
         
     def create_players(self, colors):
         '''Create brand new players. For now, they are just placeholders.'''

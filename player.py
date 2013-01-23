@@ -13,6 +13,8 @@ class Player():
 		self._settlements = []
 		self._roads = []
 		
+		self._dev_cards = []
+		
 		# TODO here have stash of settlements, cities, roads that are unbuilt
 		# TODO here have 
 		
@@ -129,7 +131,7 @@ class Player():
 	def add_development_card(self, dc):
 		'''Add given development card dc.'''
 		
-		pass
+		self._dev_cards.append(dc)
 	
 	def get_hand(self):
 		'''Return the player's hand.'''

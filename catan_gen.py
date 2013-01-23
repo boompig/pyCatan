@@ -105,6 +105,16 @@ def flatten_list(l):
 class CatanConstants():
 	'''Keep constants under one namespace.'''
 	
+	development_cards = {
+		"soldier" : 4,
+		"VP" : 5,
+		"monopoly" : 2,
+		"road building" : 2,
+		"year of plenty" : 2
+	}
+	
+	development_card_cost = ["wheat", "ore", "sheep"]
+	
 	building_costs = {
 		"settlement" : ["wheat", "brick", "sheep", "wood"],
 		"city" : ["wheat"] * 2 + ["ore"] * 3,
