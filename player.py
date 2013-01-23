@@ -39,6 +39,11 @@ class Player():
 		for r in r_list:
 			self._resources[r] -= 1
 			self._num_resources -= 1
+			
+			# if this part is disabled, will have zeroes as values for some resources
+			# if enabled, then some resources will not be in the dict
+			#if self._resources[r] == 0:
+			#	del(self._resources[r])
 		return True
 		
 	def add_settlement(self, s):

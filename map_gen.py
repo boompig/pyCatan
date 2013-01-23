@@ -186,16 +186,6 @@ class MapGen():
                     self._desert_pos = (row_i, col)
                     return
         
-    def deduct_settlement_resources(self, player):
-        '''Deduct resources for settlement construction from the given player.'''
-        
-        return self.deduct_resources(player, CatanConstants.building_costs["settlement"])
-    
-    def deduct_resources(self, player, resource_list):
-        '''Deduct the given resources from the given player.'''
-        
-        return self._players[player].deduct_resources(resource_list)
-        
     def cull_bad_settlement_vertices(self, v):
         '''Given that a settlement was built on vertex v, remove adjacent vertices from the
         set of viable building nodes for settlements. Also remove that vertex.'''
@@ -223,8 +213,8 @@ class MapGen():
         
         return self.get_player(color).has_road_to(v1) or self.get_player(color).has_road_to(v2)
     
-    def add_road(self, v1, v2, color):
-        '''Add a road of the given color to the map.
+    def add_road(self, v1, v2, color, ignore_cost=False):
+        '''Add a road of the given color to the map. Charge the player for it.
         Rules:
         - (v1, v2) is not an existing road
         - at least one of (v1, v2) must connect to a same color settlement OR
@@ -235,6 +225,7 @@ class MapGen():
             v1, v2 = v2, v1
             
         p = self.get_player(color)
+        cost = CatanConstants.building_costs["road"]
         
         # first condition only applies to first 2 roads
         if self._has_road(v1, v2) or \
@@ -242,9 +233,13 @@ class MapGen():
         (self._road_connects_same_color_road(v1, v2, color) and \
         p.get_num_roads() >= 2)):
             return False
+        elif p.get_num_roads() >=2 and not p.can_deduct_resources(cost):
+            return False
         else:
             self._roads.update((v1, v2))
             p.add_road(v1, v2)
+            if p.get_num_roads() >= 2:
+                p.deduct_resources(cost)
             return True
         
     def has_road(self, v1, v2):
@@ -257,15 +252,21 @@ class MapGen():
         return (v1, v2) in self._roads
         
     def add_settlement(self, v, color):
-        '''Add a settlement of the given color to the map.'''
+        '''Add a settlement of the given color to the map.
+        Deduct the cost if building is in a valid place.
+        Return False if cannot afford or cannot build.'''
         
         if v not in self.available_settlement_set:
            return False
        
         p = self.get_player(color)
+        cost = CatanConstants.building_costs["settlement"]
         
         # cannot build settlements in the middle of nowhere
         if p.get_num_settlements() >= 2 and not p.has_road_to(v):
+            return False
+        
+        if p.get_num_settlements() >= 2 and not p.can_deduct_resources(cost):
             return False
         
         if v in self._vertex_set:
@@ -273,6 +274,8 @@ class MapGen():
             self._settlements[v] = s # add to the game board
             p.add_settlement(s) # add to player for record-keeping
             self.cull_bad_settlement_vertices(v) # make sure nothing can be built around it
+            if p.get_num_settlements() >= 2:
+                p.deduct_resources(cost)
             return True
         else:
             return False
@@ -291,13 +294,23 @@ class MapGen():
             
     def add_city(self, v, color):
         '''Add a city of the given color to the map.
-        Upgrades existing settlement.'''
+        Upgrades existing settlement.
+        Deduct the cost if building is in a valid place.
+        Return False if cannot afford or cannot build.'''
         
-        if v in self._settlements and not self._settlements[v].is_city() and self._settlements[v].color() == color:
-            self._settlements[v].upgrade()
-            return True
-        else:
+        cost = CatanConstants.building_costs["city"]
+        p = self.get_player(color)
+        
+        if v not in self._settlements \
+        or self._settlements[v].is_city() \
+        or self._settlements[v].color() != color:
             return False
+        elif not p.can_deduct_resources(cost):
+            return False
+        else:
+            self._settlements[v].upgrade()
+            p.deduct_resources(cost)
+            return True
         
     def _create_vertex_set(self):
         '''Create a set of all vertices (nodes) on the map.

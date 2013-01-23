@@ -373,8 +373,6 @@ class CatanApp():
 		self.draw_status_area()
 		self._roll_var = StringVar()
 		
-		
-		
 		self._roll_button = Button(
 			frame1, 
 			text="End turn", 
@@ -390,17 +388,9 @@ class CatanApp():
 		l.place(x=600, y=120)
 		l.pack()
 		
-		f = lambda: self.change_to_state("choose building")
+		self.create_build_buttons()
 		
-		self._build_button = Button(
-			frame1, 
-			text="Build settlement", 
-			#command=self.allow_build_settlement,
-			command=f,
-			state=DISABLED
-		)
-		
-		self._canvas.create_window(170, self.height + 10, window=self._build_button, anchor=S)
+		self._canvas.create_window(170, self.height + 10, window=self._build_buttons["settlement"], anchor=S)
 		
 		self.draw_robber()
 		# bind events to the robber
@@ -411,16 +401,57 @@ class CatanApp():
 		
 		self.automate_setup()
 		
-	def allow_build_settlement(self):
-		'''Allow the building of a settlement.'''
+	def create_build_buttons(self):
+		'''Create buttons to build various structures.'''
 		
-		# check for resources
-		if self._map.deduct_settlement_resources(self.players[self._turn]):
-			print "Entered settlement building mode"
-			self.change_to_state("additional settlement placement")
+		self._build_buttons = {}
+		
+		for type in ["road", "settlement", "city"]:
+			self.create_build_button(type)
+			
+		f = lambda: self.change_to_state("gameplay")
+			
+		self._cancel_building_button = Button(
+			self._frame,
+			text="Cancel building",
+			state=DISABLED,
+			command=f
+		)
+		self._cancel_building_button.pack()
+		
+	def enable_building(self, type):
+		'''Enable building of buildings of certain type.
+		NOTE: player has not been charged by this point.'''
+		
+		color = self.players[self._turn]
+		p = self._map.get_player(color)
+		if p.can_deduct_resources(CatanConstants.building_costs[type]):
+			if type == "city":
+				for item in self._canvas.find_withtag("settlement"):
+					self._canvas.itemconfigure(item, state=NORMAL)
+				for item in self._canvas.find_withtag("settlement_placeholder"):
+					self._canvas.itemconfigure(item, state=DISABLED)
+			else:
+				for item in self._canvas.find_withtag(type + "_placeholder"):
+					self._canvas.itemconfigure(item, state=NORMAL)
+			
+			self.change_to_state("place additional building")
 		else:
-			print "Failed to enter settlement building mode - not enough resources"
-			self.post_status_note("Failed to enter settlement building mode - not enough resources", error=True)
+			self.post_status_note("{} does not have enough resources to build a {}".format(color, type), True)
+		
+	def create_build_button(self, type):
+		'''Create button to build given structure.'''
+		
+		f = lambda: self.enable_building(type)
+		
+		self._build_buttons[type] = Button(
+			self._frame, 
+			text="Build {}".format(type), 
+			command=f,
+			state=DISABLED
+		)
+		
+		self._build_buttons[type].pack()
 		
 	def roll(self, change_turn=True):
 		'''End the previous turn, then roll the dice.'''
@@ -491,7 +522,8 @@ class CatanApp():
 				self._canvas.itemconfigure(b, state=DISABLED)
 			# re-enable the roll button
 			self._roll_button.config(state=NORMAL)
-			self._build_button.config(state=NORMAL)
+			for button in self._build_buttons.itervalues():
+				button.config(state=NORMAL)
 		elif self._state == "choose building":
 			# hide the hand while building
 			for item in self._canvas.find_withtag("hand_area_section"):
@@ -500,17 +532,16 @@ class CatanApp():
 			for item in self._canvas.find_withtag("building_selection"):
 				self._canvas.itemconfigure(item, state=NORMAL)
 			
-		elif self._state == "additional settlement placement":
+		elif self._state == "place additional building":
+			# disable the buttons
 			self._roll_button.config(state=DISABLED)
-			self._build_button.config(state=DISABLED)
+			for b in self._build_buttons.itervalues():
+				b.config(state=DISABLED)
+			self._cancel_building_button.config(state=NORMAL)
 			
-			for s in self._canvas.find_withtag("settlement"):
-				self._canvas.itemconfigure(s, state=DISABLED)
-			for s in self._canvas.find_withtag("settlement_placeholder"):
-				self._canvas.itemconfigure(s, state=NORMAL)
 		elif self._state == "move robber":
 			self._roll_button.config(state=DISABLED)
-			self._build_button.config(state=DISABLED)
+			self._build_buttons["settlement"].config(state=DISABLED)
 			for s in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(s, state=DISABLED)
 			self._canvas.itemconfigure(self._robber_sprite, state=NORMAL)
@@ -529,7 +560,7 @@ class CatanApp():
 			for s in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(s, state=DISABLED)
 			self._roll_button.config(state=DISABLED)
-			self._build_button.config(state=DISABLED)
+			self._build_buttons["settlement"].config(state=DISABLED)
 				
 	def post_status_note(self, msg=None, error=False):
 		c = "red" if error else "black" 
@@ -542,15 +573,19 @@ class CatanApp():
 			elif "road placement" in self._state:
 				t = "Place a road"
 			elif self._state == "gameplay":
-				t = "Done with initial placements!"
+			#	t = "Done with initial placements!"
+				t = None
 			elif self._state == "move robber":
 				t = "Move the robber"
 			elif self._state == "choose player":
 				t = "Choose a player to steal from"	
 			elif self._state == "choose building":
 				t = "Choose a building to build"
+			elif self._state == "place additional building":
+				t = "Place the building you just bought"
 			
-		self._canvas.itemconfigure(self._note, text=t, fill=c)
+		if t is not None:
+			self._canvas.itemconfigure(self._note, text=t, fill=c)
 				
 	def act_on_end_state(self):
 		'''Perform state exit actions.'''
@@ -579,11 +614,10 @@ class CatanApp():
 			# re-enable all buildings
 			for b in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(b, state=NORMAL)
-			self._build_button.config(state=DISABLED)
 			self._roll_button.config(state=DISABLED)
 		elif self._state == "move robber":
 			self._roll_button.config(state=NORMAL)
-			self._build_button.config(state=NORMAL)
+			self._build_buttons["settlement"].config(state=NORMAL)
 			for s in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(s, state=DISABLED)
 			# this is the main part
@@ -599,6 +633,22 @@ class CatanApp():
 				
 			for item in self._canvas.find_withtag("building_selection"):
 				self._canvas.itemconfigure(item, state=HIDDEN)
+		elif self._state == "place additional building":
+			# re-enable the buttons
+			self._roll_button.config(state=NORMAL)
+			for b in self._build_buttons.itervalues():
+				b.config(state=NORMAL)
+				
+			# disable the buildings
+			for s in self._canvas.find_withtag("building"):
+				self._canvas.itemconfigure(s, state=DISABLED)
+			self._cancel_building_button.config(state=DISABLED)
+			
+			# update hand
+			self.update_hand(self.players[self._turn])
+			
+			# post that the building is good
+			self.post_status_note("Successfully built the building!", False)
 		
 	def draw_build_menu(self):
 		'''Draw the build menu.'''
@@ -713,6 +763,7 @@ class CatanApp():
 		self.update_hand(from_player)
 		self.update_hand(to_player)
 		print "Stole {} from {} and gave to {}".format(r, from_player, to_player)
+		self.post_status_note("Stole from {}".format(from_player))
 		self.change_to_state("gameplay")
 		
 	def change_status_turn(self, decr=False):
@@ -787,7 +838,7 @@ class CatanApp():
 		
 		self._roads[(v1, v2)] = canvas.create_polygon(
 			*CatanUtils.get_tkinter_coords(v),
-			tags=("road", tag, "building"),
+			tags=("road", tag, "building", "road_placeholder"),
 			fill="", # transparent fill
 		   	outline="" # no outline
 		)
@@ -800,12 +851,14 @@ class CatanApp():
 		
 		color = self.players[self._turn]
 		
+		# here we update the model
 		if self._map.add_road(v1, v2, color):
 			print "Building {} road between {} and {}".format(color, v1, v2)
 			tag = "road_placeholder_{}_{}_{}_{}".format(v1[0], v1[1], v2[0], v2[1])
 			
 			self._canvas.itemconfigure(self._roads[(v1, v2)], fill=color, outline="black")
 			self._canvas.dtag(self._roads[(v1, v2)], tag)
+			self._canvas.dtag(self._roads[(v1, v2)], "road_placeholder")
 			
 			if self._state == "first road placement":
 				if self._turn == 3:
@@ -819,6 +872,8 @@ class CatanApp():
 				else:
 					self.change_status_turn(True)
 					self.change_to_state("second settlement placement")
+			else:
+				self.change_to_state("gameplay")
 		else:
 			msg = "Road must be attached to a settlement."
 			print "Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg
@@ -882,10 +937,12 @@ class CatanApp():
 				self.change_to_state("first road placement")
 			elif self._state == "second settlement placement":
 				self.change_to_state("second road placement")
-			elif self._state == "additional settlement placement":
+			else:# self._state == "additional settlement placement":
 				self.change_to_state("gameplay")
 		else:
 			print "Failed to build {} settlement at {}".format(color, v)
+			#TODO possibly other error, like not being connected to a road
+			#TODO this is a good place to use an exception
 			self.post_status_note("That building spot is too close to an existing settlement", error=True)
 			
 	def change_to_state(self, new_state):
@@ -918,6 +975,7 @@ class CatanApp():
 		
 		# reflect changes in the model
 		self._map.add_city(v, color)
+		self.change_to_state("gameplay")
 		
 	@staticmethod
 	def set_vertices(map):
