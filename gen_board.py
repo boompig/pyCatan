@@ -227,19 +227,20 @@ class CatanApp():
 			if "hex" in tags:
 				coord = tuple([int(i) for i in tags[1].replace("hex_", "").split("_")])
 				
-				self._map.set_robber_hex(coord[0], coord[1])
-				center = self._map.get_robber_hex().get_center()
-				self._canvas.move(
-					self._robber_sprite,
-					center[0] - self._grab_item["x"],
-					center[1] - self._grab_item["y"]
-				)
-				
-				# TODO - allow me to re-pickup the robber and move it again
-				self.change_to_state("choose player")
-				# this now waits for another function to exit before resuming...
-				
-				return
+				if self._map.set_robber_hex(coord[0], coord[1]):
+					center = self._map.get_robber_hex().get_center()
+					self._canvas.move(
+						self._robber_sprite,
+						center[0] - self._grab_item["x"],
+						center[1] - self._grab_item["y"]
+					)
+					
+					# TODO - allow me to re-pickup the robber and move it again
+					self.enable_stealing()
+				else:
+					print "ROBBER FAIL"
+					self.move_robber_to_hex(self._map.get_robber_hex())
+					return
 			
 	def enable_stealing(self):
 		'''Enable stealing by the current player from all players adjoining the robber hex.'''
@@ -275,20 +276,33 @@ class CatanApp():
 		old_pos_c = ((old_pos[0] + old_pos[2]) / 2, (old_pos[1] + old_pos[3]) / 2)
 		self._canvas.move(self._robber_sprite, new_pos[0] - old_pos_c[0], new_pos[1] - old_pos_c[1])
 	
+	def automate_robber(self):
+		'''Automate the robber completely.'''
+		
+		self.automate_robber_movement()
+		self.automate_robber_steal_picking()
+		#self.change_to_state("gameplay")
+	
+	def automate_robber_steal_picking(self):
+		'''Automate the process of picking a person to steal from, once robber has been placed.'''
+		
+		self.steal_from_player(self._map.ai.get_random_robber_pick())
+	
 	def automate_robber_movement(self):
 		'''Choose a place to put the robber.'''
+		
+		good_placement = False
 		
 		color = self.players[self._turn]
 		row, col = self._map.ai.get_smart_robber_placement(color)
 		#destination_hex_sprite = self._canvas.find_withtag("hex_{}_{}".format(row, col))
 		model_hex = self._map._board[row][col]
 		
-		self.move_robber_to_hex(model_hex)
-		self._map.set_robber_hex(row, col)
-		#center = model_hex.get_center()
-		
-		
-		# now we know where the robber is supposed to go...
+		if self._map.set_robber_hex(row, col):
+			self.move_robber_to_hex(model_hex)
+		else:
+			print "AI picked same hex to put robber, skipping stealing..."
+			#self.move_robber_to_hex(self._map.get_robber_hex())
 	
 	def automate_setup(self):
 		'''Create a random setup of the first two roads and settlements.'''
@@ -502,8 +516,8 @@ class CatanApp():
 			self._canvas.itemconfigure(self._robber_sprite, state=NORMAL)
 			
 			# TODO for now
-			self.automate_robber_movement()
-			self.change_to_state("choose player")
+			self.automate_robber()
+			#self.change_to_state("gameplay")
 			
 		elif self._state == "choose player":
 			# enable the hand rectangles

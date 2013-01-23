@@ -171,9 +171,20 @@ class MapGen():
         self.available_settlement_set = self._vertex_set.copy()
         
         # place the robber on the desert hex
-        self._robber_hex = self._resource_map["desert"][0]
+        self._find_desert_hex()
+        self._robber_hex = self._desert_pos
+        #self._robber_hex = self._resource_map["desert"][0]
         
         self.ai.prepare()
+        
+    def _find_desert_hex(self):
+        '''Find the desert hex and set self._desert_pos to its position in the form (row, col).'''
+        
+        for row_i, row in enumerate(self._board):
+            for col, hex in enumerate(row):
+                if hex.get_resource() == "desert":
+                    self._desert_pos = (row_i, col)
+                    return
         
     def deduct_settlement_resources(self, player):
         '''Deduct resources for settlement construction from the given player.'''
@@ -271,7 +282,7 @@ class MapGen():
         
         s = set([])
         
-        for v in self._robber_hex.get_vertices():
+        for v in self.get_robber_hex.get_vertices():
             if v in self._settlements:
                 s.add(self._settlements[v].color())
                 
@@ -306,13 +317,6 @@ class MapGen():
                     if v not in self._vertex_map:
                         self._vertex_map[v] = []
                     self._vertex_map[v].append(hex)
-                    
-#        CatanUtils.print_dict(self._vertex_map)
-
-    def move_robber(self, new_hex):
-        '''Move the robber to the new hex.'''
-        
-        self._robber_hex = new_hex
 
     def produce(self, s, ignore_robber=False):
         '''Make the settlement s produce resources.
@@ -323,7 +327,7 @@ class MapGen():
         v = s.vertex()
         adjacent_hex_list = self._vertex_map[v]
         for hex in adjacent_hex_list:
-            if hex != self._robber_hex or ignore_robber:
+            if hex != self.get_robber_hex() or ignore_robber:
                 l.append(hex.get_resource())
             
         self._players[s.color()].add_resources(l)
@@ -398,15 +402,30 @@ class MapGen():
                 d[c] = p.get_num_resources() // 2 # explicit integer division
             
         return d
+    
+    def _get_hex_at_coords(self, row, col):
+        '''Return hex object at the given coordinates.'''
+        
+        return self._board[row][col]
                 
     def get_robber_hex(self):
         '''Return the hex with the robber on it.'''
         
-        return self._robber_hex
+        #return self._robber_hex
+        return self._get_hex_at_coords(*self._robber_hex)
     
     def set_robber_hex(self, row, col):
+        '''Set the position of the robber.
+        Cannot be same as old position.
+        Return True iff robber was properly set.'''
         
-        self._robber_hex = self._board[row][col]
+        if (row, col) == self._robber_hex:
+            #print "Robber cannot go on same space!!"
+            return False
+        else:
+            self._robber_hex = (row, col)
+            return True
+            #self._board[row][col]
         
     def robber_steal(self, from_player, to_player):
         '''Robber steals from from_player and gives to to_player.

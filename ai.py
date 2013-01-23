@@ -44,9 +44,13 @@ class AI():
     def _eval_hex_robber_score(self, hex, color):
         '''Return the robber score for this hex.
         Hex gets a point value of 0 if `color` is on it.
-        Neutral hexes get a point-value of 1 for tie-break.'''
+        Neutral hexes get a point-value of 1 for tie-break.
+        Also 0 is the previous robber hex.'''
         
         score = 1 # neutral hexes get 1 point
+        
+        if hex == self._board.get_robber_hex():
+            return 0
         
         for v in hex.get_vertices():
             if v in self._board._settlements:
@@ -60,6 +64,17 @@ class AI():
                     score += 1 * hex.get_num_dots()
                 
         return score
+    
+    def get_random_robber_pick(self):
+        '''Return a color to steal from. This is random.'''
+        
+        l = []
+        
+        for v in self._board.get_robber_hex().get_vertices():
+            if v in self._board._settlements:
+                l.append(self._board._settlements[v].color())
+                
+        return random.choice(l)
     
     def get_smart_robber_placement(self, color):
         '''Return the *position* of the hex on which to place the robber.
