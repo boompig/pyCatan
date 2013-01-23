@@ -142,7 +142,10 @@ class Player():
 if __name__ == "__main__":
 	p = Player()
 	p.add_resources(["sheep"] * 3 + ["wheat"] * 2)
-	print p.steal_resource()
-	print p.steal_resource()
-	print p.steal_resource()
-	print p.steal_resource()
+	#print p.steal_resource()
+	#print p.steal_resource()
+	#print p.steal_resource()
+	#print p.steal_resource()
+	
+	print p.get_printable_hand()
+	

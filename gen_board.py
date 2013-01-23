@@ -236,26 +236,29 @@ class CatanApp():
 				)
 				
 				# TODO - allow me to re-pickup the robber and move it again
-				
-				# only allow stealing from players who are adjacent to that hex
-				player_list = self._map.get_players_on_robber_hex()
-				
-				if len(player_list) == 0:
-					# don't steal from anybody
-					self.change_to_state("gameplay")
-				elif len(player_list) == 1:
-					# don't go through trouble of selection here, since there is only 1 choice
-					self.steal_from_player(player_list[0])
-				else:
-					for c in player_list:
-						t = "player_hand_rect_%s" % c
-						self._canvas.itemconfigure(self._canvas.find_withtag(t)[0], state=NORMAL)
-					
-					self.change_to_state("choose player")
-					
+				self.change_to_state("choose player")
 				# this now waits for another function to exit before resuming...
 				
 				return
+			
+	def enable_stealing(self):
+		'''Enable stealing by the current player from all players adjoining the robber hex.'''
+		
+		# only allow stealing from players who are adjacent to that hex
+		player_list = self._map.get_players_on_robber_hex()
+		
+		if len(player_list) == 0:
+			# don't steal from anybody
+			self.change_to_state("gameplay")
+		elif len(player_list) == 1:
+			# don't go through trouble of selection here, since there is only 1 choice
+			self.steal_from_player(player_list[0])
+			self.change_to_state("gameplay")
+		else:
+			for c in player_list:
+				t = "player_hand_rect_%s" % c
+				self._canvas.itemconfigure(self._canvas.find_withtag(t)[0], state=NORMAL)
+			
 	
 	def _next_turn(self, decr=False):
 		i=-1 if decr else 1
@@ -263,6 +266,29 @@ class CatanApp():
 		
 	def _get_turn(self):
 		return self._turn
+	
+	def move_robber_to_hex(self, destination_hex):
+		'''Move robber to the given hex. Here, hex is the Hex object.'''
+		
+		new_pos = destination_hex.get_center()
+		old_pos = self._canvas.coords(self._robber_sprite)
+		old_pos_c = ((old_pos[0] + old_pos[2]) / 2, (old_pos[1] + old_pos[3]) / 2)
+		self._canvas.move(self._robber_sprite, new_pos[0] - old_pos_c[0], new_pos[1] - old_pos_c[1])
+	
+	def automate_robber_movement(self):
+		'''Choose a place to put the robber.'''
+		
+		color = self.players[self._turn]
+		row, col = self._map.ai.get_smart_robber_placement(color)
+		#destination_hex_sprite = self._canvas.find_withtag("hex_{}_{}".format(row, col))
+		model_hex = self._map._board[row][col]
+		
+		self.move_robber_to_hex(model_hex)
+		self._map.set_robber_hex(row, col)
+		#center = model_hex.get_center()
+		
+		
+		# now we know where the robber is supposed to go...
 	
 	def automate_setup(self):
 		'''Create a random setup of the first two roads and settlements.'''
@@ -381,18 +407,6 @@ class CatanApp():
 		else:
 			print "Failed to enter settlement building mode - not enough resources"
 			self.post_status_note("Failed to enter settlement building mode - not enough resources", error=True)
-			
-	def place_initial_settlements(self):
-		'''Place the initial settlements.'''
-		
-		# step 1 - go forward through players, give no resources
-		for p in range(4):
-			pass
-			# wait for user input
-		
-		# step 2 - go backward through players, give resources to adjacent tiles
-		for p in range(3, -1, -1):
-			pass
 		
 	def roll(self, change_turn=True):
 		'''End the previous turn, then roll the dice.'''
@@ -409,6 +423,9 @@ class CatanApp():
 		self._roll_var.set("Last roll: {}".format(n))
 		
 		if n == 7:
+			# TODO discard cards first
+			
+			# 
 			self.change_to_state("move robber")
 			# starting from this player, each player must discard half their hand
 			#discard_map = self._map.robber_discard()
@@ -473,10 +490,6 @@ class CatanApp():
 			self._roll_button.config(state=DISABLED)
 			self._build_button.config(state=DISABLED)
 			
-			
-			
-			#TODO only allow building in places which attach to the road
-			
 			for s in self._canvas.find_withtag("settlement"):
 				self._canvas.itemconfigure(s, state=DISABLED)
 			for s in self._canvas.find_withtag("settlement_placeholder"):
@@ -487,9 +500,16 @@ class CatanApp():
 			for s in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(s, state=DISABLED)
 			self._canvas.itemconfigure(self._robber_sprite, state=NORMAL)
+			
+			# TODO for now
+			self.automate_robber_movement()
+			self.change_to_state("choose player")
+			
 		elif self._state == "choose player":
 			# enable the hand rectangles
-			
+			#for rect in self._canvas.find_withtag("player_hand_rect"):
+			#	self._canvas.itemconfigure(rect, state=NORMAL)
+			self.enable_stealing()
 				
 			# disable basically everything else
 			for s in self._canvas.find_withtag("building"):

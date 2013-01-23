@@ -41,6 +41,44 @@ class AI():
            
         return False # no road can be built from this settlement
     
+    def _eval_hex_robber_score(self, hex, color):
+        '''Return the robber score for this hex.
+        Hex gets a point value of 0 if `color` is on it.
+        Neutral hexes get a point-value of 1 for tie-break.'''
+        
+        score = 1 # neutral hexes get 1 point
+        
+        for v in hex.get_vertices():
+            if v in self._board._settlements:
+                s = self._board._settlements[v]
+                
+                if s.color() == color:
+                    return 0 # no points for hexes with same color as choosing player
+                elif s.is_city():
+                    score += 2 * hex.get_num_dots()
+                else :
+                    score += 1 * hex.get_num_dots()
+                
+        return score
+    
+    def get_smart_robber_placement(self, color):
+        '''Return the *position* of the hex on which to place the robber.
+        Should be a high-producing hex with no settlements/cities by this player.
+        Color is the color of the player placing the robber.'''
+        
+        max_score = 0
+        best_hex = None
+        
+        for row_i, row in enumerate(self._board._board):
+            for col, hex in enumerate(row):
+                score = self._eval_hex_robber_score(hex, color)
+                if score > max_score:
+                    #best_hex = hex
+                    best_hex = (row_i, col)
+                    max_score = score
+                    
+        return best_hex
+    
     def get_best_settlement(self):
         '''Return the settlement with the highest combined prob. of generating a resource.'''
         
