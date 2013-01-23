@@ -171,7 +171,7 @@ class MapGen():
         self.available_settlement_set = self._vertex_set.copy()
         
         # place the robber on the desert hex
-        self._robber_hex = self._resource_map["desert"]
+        self._robber_hex = self._resource_map["desert"][0]
         
         self.ai.prepare()
         
@@ -354,6 +354,15 @@ class MapGen():
                 d[c] = p.get_num_resources() // 2 # explicit integer division
             
         return d
+                
+    def get_robber_hex(self):
+        '''Return the hex with the robber on it.'''
+        
+        return self._robber_hex
+    
+    def set_robber_hex(self, row, col):
+        
+        self._robber_hex = self._board[row][col]
                 
     def _create_resource_map(self):
         ''' resource_map maps numbers to list of hexes 

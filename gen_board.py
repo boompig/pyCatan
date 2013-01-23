@@ -83,15 +83,14 @@ def get_hex_latice(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist
 	return rows
 	
 
-def draw_hex(canvas, hex):
+def draw_hex(canvas, hex, row, col):
 	'''Draw this hexagon object.'''
-	
-	# TODO move under class
 	
 	canvas.create_polygon(
 		*CatanUtils.get_tkinter_coords(hex.get_vertices()), 
 		fill=CatanRenderConstants.resource_color_map[hex.get_resource()], 
-		outline="black"
+		outline="black",
+		tags=("hex", "hex_{}_{}".format(row, col))
 	)
 	
 	draw_token(canvas, hex)
@@ -184,7 +183,63 @@ class CatanApp():
 	settlement_radius = 20
 	city_radius = 22
 	
+	robber_height = 40
+	robber_width = 40
+	
 	players = ["red", "gold2", "blue", "green"]
+	
+	def draw_robber(self):
+		# the robber has an associated hex
+		center = self._map.get_robber_hex().get_center()
+		self._robber_sprite = self._canvas.create_oval(
+			center[0] - self.robber_width / 2,
+			center[1] - self.robber_height / 2,
+			center[0] + self.robber_width / 2,
+			center[1] + self.robber_height / 2,
+			tags="robber",
+			fill="black",
+			activefill="yellow"
+		)
+		
+	def grab_robber(self, event):
+		self._grab_item = {
+			"x" : event.x,
+			"y" : event.y,
+			"item" : self._canvas.find_withtag("robber")
+		}
+		
+	def move_robber(self, event):
+		self._canvas.move(
+			self._grab_item["item"],
+			event.x - self._grab_item["x"], 
+			event.y - self._grab_item["y"]
+		)
+		self._grab_item["x"] = event.x
+		self._grab_item["y"] = event.y
+		
+	def release_robber(self, event):
+		# get the closest hex...
+		items = self._canvas.find_overlapping(event.x - 15, event.y - 15, event.x + 15, event.y + 15)
+		
+		for item in items:
+			tags = self._canvas.gettags(item)
+			if "hex" in tags:
+				coord = tuple([int(i) for i in tags[1].replace("hex_", "").split("_")])
+				
+				self._map.set_robber_hex(coord[0], coord[1])
+				center = self._map.get_robber_hex().get_center()
+				self._canvas.move(
+					self._robber_sprite,
+					center[0] - self._grab_item["x"],
+					center[1] - self._grab_item["y"]
+				)
+				
+				# steal from that player
+				
+				self.change_to_state("gameplay")
+				
+				
+				return
 	
 	def _next_turn(self, decr=False):
 		i=-1 if decr else 1
@@ -261,14 +316,20 @@ class CatanApp():
 		#self.play_game()
 		self.draw_status_area()
 		self._roll_var = StringVar()
+		
+		
+		
 		self._roll_button = Button(
 			frame1, 
 			text="End turn", 
 			command=self.roll,
 			state=DISABLED # initially hide it
 		)
-		self._roll_button.place(x=600, y=20)
-		self._roll_button.pack()
+		#self._roll_button.place(x=600, y=20)
+		#self._roll_button.pack()
+		
+		self._canvas.create_window(100, self.height + 10, window=self._roll_button, anchor=S)
+		
 		l = Label(frame1, textvar=self._roll_var)
 		l.place(x=600, y=120)
 		l.pack()
@@ -279,8 +340,15 @@ class CatanApp():
 			command=self.allow_build_settlement,
 			state=DISABLED
 		)
-		self._build_button.place(x=600, y=20)
-		self._build_button.pack()
+		
+		self._canvas.create_window(250, self.height + 10, window=self._build_button, anchor=S)
+		
+		self.draw_robber()
+		# bind events to the robber
+		self._canvas.tag_bind("robber", "<ButtonPress-1>", self.grab_robber)
+		self._canvas.tag_bind("robber", "<B1-Motion>", self.move_robber)
+		self._canvas.tag_bind("robber", "<ButtonRelease-1>", self.release_robber)
+		
 		
 		self.automate_setup()
 		
@@ -307,11 +375,11 @@ class CatanApp():
 		for p in range(3, -1, -1):
 			pass
 		
-	def roll(self):
+	def roll(self, change_turn=True):
 		'''End the previous turn, then roll the dice.'''
 		
-		# change turn
-		self.change_status_turn()
+		if change_turn:
+			self.change_status_turn()
 		
 		# roll the dice
 		r1 = random.randint(1, 6)
@@ -322,14 +390,15 @@ class CatanApp():
 		self._roll_var.set("Last roll: {}".format(n))
 		
 		if n == 7:
+			self.change_to_state("move robber")
 			# starting from this player, each player must discard half their hand
-			discard_map = self._map.robber_discard()
+			#discard_map = self._map.robber_discard()
 			
-			for i in range(4):
-				c = self.players[self._turn]
-				# this player must discard <x> cards
-				if c in discard_map:
-					self.post_status_note("{} must discard {} cards".format(c.title(), discard_map[c]), True)
+			#for i in range(4):
+			#	c = self.players[self._turn]
+			#	# this player must discard <x> cards
+			#	if c in discard_map:
+			#		self.post_status_note("{} must discard {} cards".format(c.title(), discard_map[c]), True)
 		else:
 			# compute produced resources
 			d = self._map.get_resources_produced(n)
@@ -380,6 +449,12 @@ class CatanApp():
 				self._canvas.itemconfigure(s, state=DISABLED)
 			for s in self._canvas.find_withtag("settlement_placeholder"):
 				self._canvas.itemconfigure(s, state=NORMAL)
+		elif self._state == "move robber":
+			self._roll_button.config(state=DISABLED)
+			self._build_button.config(state=DISABLED)
+			for s in self._canvas.find_withtag("building"):
+				self._canvas.itemconfigure(s, state=DISABLED)
+			self._canvas.itemconfigure(self._robber_sprite, state=NORMAL)
 				
 	def post_status_note(self, msg=None, error=False):
 		c = "red" if error else "black" 
@@ -393,6 +468,8 @@ class CatanApp():
 				t = "Place a road"
 			elif self._state == "gameplay":
 				t = "Done with initial placements!"
+			elif self._state == "move robber":
+				t = "Move the robber"
 			
 		self._canvas.itemconfigure(self._note, text=t, fill=c)
 				
@@ -411,18 +488,26 @@ class CatanApp():
 				second_settlement =  self._map.get_player(c).get_settlement(1)
 				self._map.produce(second_settlement)
 				self.update_hand(c)
-				
 		elif self._state in ["first road placement", "second road placement"]:
 			for s in self._canvas.find_withtag("settlement"):
 				self._canvas.itemconfigure(s, state=NORMAL)
 			for city in self._canvas.find_withtag("city"):
 				self._canvas.itemconfigure(city, state=NORMAL)
+				
+			if "second" in self._state and self._turn == 0:
+				self.roll(False)
 		elif self._state == "gameplay":
 			# re-enable all buildings
 			for b in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(b, state=NORMAL)
 			self._build_button.config(state=DISABLED)
 			self._roll_button.config(state=DISABLED)
+		elif self._state == "move robber":
+			self._roll_button.config(state=NORMAL)
+			self._build_button.config(state=NORMAL)
+			for s in self._canvas.find_withtag("building"):
+				self._canvas.itemconfigure(s, state=DISABLED)
+			self._canvas.itemconfigure(self._robber_sprite, state=DISABLED)
 		
 		
 	def draw_status_area(self):
@@ -481,9 +566,9 @@ class CatanApp():
 	def draw_board(self, canvas):
 		'''Now we draw the board...'''
 		
-		for row in self._map.get_map():
-			for hex in row:
-				draw_hex(canvas, hex)
+		for row_i, row in enumerate(self._map.get_map()):
+			for col, hex in enumerate(row):
+				draw_hex(canvas, hex, row_i, col)
 				
 		self._settlements = {}
 		self._roads = {}

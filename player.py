@@ -1,3 +1,5 @@
+import random
+
 class Player():
 	'''Single-player player.'''
 
@@ -88,10 +90,26 @@ class Player():
 			
 		return s[:-2]
 		
-	def get_resource_random_resource(self):
-		'''Return (discard) random resource.'''
+	def steal_resource(self):
+		'''Return (discard) random resource. 
+		If the player has no resources, return None.'''
 		
-		pass
+		if self._num_resources == 0:
+			return None
+		
+		n = random.randint(0, self.get_num_resources() - 1)
+		i = 0
+		
+		for k in self._resources:
+			if i <= n < i + self._resources[k]:
+				self._resources[k] -= 1
+				self._num_resources -= 1
+				return k
+			else:
+				i += self._resources[k]
+				
+		print self._num_resources
+		print n
 		
 	def get_monopoly_resources(self, r):
 		'''Get all resources of type r. Discard.'''
@@ -124,4 +142,8 @@ class Player():
 	
 if __name__ == "__main__":
 	p = Player()
-	print p.get_num_vp()
+	p.add_resources(["sheep"] * 3 + ["wheat"] * 2)
+	print p.steal_resource()
+	print p.steal_resource()
+	print p.steal_resource()
+	print p.steal_resource()

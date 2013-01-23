@@ -38,6 +38,9 @@ class Hex():
 		return self._n
 
 	def get_token(self):
+		'''Return the token letter associated with this hex.
+		If it is a desert hex, return the string "DESERT"'''
+		
 		if self._t is None:
 			return "DESERT"
 		else:
@@ -59,6 +62,14 @@ class Hex():
 				return self._v[0]
 			elif index == "right":
 				return self._v[3]
+			
+	def get_center(self):
+		'''Return the center of this tile.'''
+		
+		return (
+			(self.get_left() + self.get_right()) / 2,
+			(self.get_top() + self.get_bottom()) / 2,
+		)
 			
 	def get_top(self):
 		return self._v[1][1]
