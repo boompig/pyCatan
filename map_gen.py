@@ -233,6 +233,18 @@ class MapGen():
             return True
         else:
             return False
+        
+    def get_players_on_robber_hex(self):
+        '''Return a list of player colors on the hex with the robber.'''
+        
+        s = set([])
+        
+        for v in self._robber_hex.get_vertices():
+            if v in self._settlements:
+                s.add(self._settlements[v].color())
+                
+        return list(s)
+            
             
     def add_city(self, v, color):
         '''Add a city of the given color to the map.
@@ -363,6 +375,18 @@ class MapGen():
     def set_robber_hex(self, row, col):
         
         self._robber_hex = self._board[row][col]
+        
+    def robber_steal(self, from_player, to_player):
+        '''Robber steals from from_player and gives to to_player.
+        Return the resource that was stolen.
+        If from_player has no cards, return None.'''
+        
+        r = self._players[from_player].steal_resource()
+        
+        if r is not None:
+           self._players[to_player].add_resources([r])
+            
+        return r
                 
     def _create_resource_map(self):
         ''' resource_map maps numbers to list of hexes 

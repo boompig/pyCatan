@@ -196,9 +196,10 @@ class CatanApp():
 			center[1] - self.robber_height / 2,
 			center[0] + self.robber_width / 2,
 			center[1] + self.robber_height / 2,
-			tags="robber",
+			tag="robber",
 			fill="black",
-			activefill="yellow"
+			activefill="yellow",
+			state=DISABLED
 		)
 		
 	def grab_robber(self, event):
@@ -234,10 +235,23 @@ class CatanApp():
 					center[1] - self._grab_item["y"]
 				)
 				
-				# steal from that player
+				# only allow stealing from players who are adjacent to that hex
+				player_list = self._map.get_players_on_robber_hex()
 				
-				self.change_to_state("gameplay")
-				
+				if len(player_list) == 0:
+					# don't steal from anybody
+					self.change_to_state("gameplay")
+				elif len(player_list) == 1:
+					# don't go through trouble of selection here, since there is only 1 choice
+					self.steal_from_player(player_list[0])
+				else:
+					for c in player_list:
+						t = "player_hand_rect_%s" % c
+						self._canvas.itemconfigure(self._canvas.find_withtag(t)[0], state=NORMAL)
+					
+					self.change_to_state("choose player")
+					
+				# this now waits for another function to exit before resuming...
 				
 				return
 	
@@ -445,6 +459,9 @@ class CatanApp():
 		elif self._state == "additional settlement placement":
 			self._roll_button.config(state=DISABLED)
 			self._build_button.config(state=DISABLED)
+			
+			#TODO only allow building in places which attach to the road
+			
 			for s in self._canvas.find_withtag("settlement"):
 				self._canvas.itemconfigure(s, state=DISABLED)
 			for s in self._canvas.find_withtag("settlement_placeholder"):
@@ -455,6 +472,15 @@ class CatanApp():
 			for s in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(s, state=DISABLED)
 			self._canvas.itemconfigure(self._robber_sprite, state=NORMAL)
+		elif self._state == "choose player":
+			# enable the hand rectangles
+			
+				
+			# disable basically everything else
+			for s in self._canvas.find_withtag("building"):
+				self._canvas.itemconfigure(s, state=DISABLED)
+			self._roll_button.config(state=DISABLED)
+			self._build_button.config(state=DISABLED)
 				
 	def post_status_note(self, msg=None, error=False):
 		c = "red" if error else "black" 
@@ -470,6 +496,8 @@ class CatanApp():
 				t = "Done with initial placements!"
 			elif self._state == "move robber":
 				t = "Move the robber"
+			elif self._state == "choose player":
+				t = "Choose a player"
 			
 		self._canvas.itemconfigure(self._note, text=t, fill=c)
 				
@@ -507,7 +535,12 @@ class CatanApp():
 			self._build_button.config(state=NORMAL)
 			for s in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(s, state=DISABLED)
+			# this is the main part
 			self._canvas.itemconfigure(self._robber_sprite, state=DISABLED)
+		elif self._state == "choose player":
+			for rect in self._canvas.find_withtag("player_hand_rect"):
+				self._canvas.itemconfigure(rect, state=DISABLED)
+			# the usual stuff will be enabled when gameplay is resumed
 		
 		
 	def draw_status_area(self):
@@ -527,25 +560,51 @@ class CatanApp():
 		self.act_on_start_state()
 		
 		self.draw_hand_area()
+		
+	def draw_hand_area_section(self, c, i):
+		f = lambda event : self.steal_from_player(c)
+		t = "player_hand_rect_%s" % c
+		
+		self._canvas.create_rectangle(
+			550, 
+			120 * (i + 1) - 20, 
+			580, 
+			120 * (i + 1) + 10, 
+			fill=c, 
+			outline="black",
+			tag=("player_hand_rect", t),
+			state=DISABLED,
+			activeoutline="gold4",
+		)
+		
+		self._hands[c] = self._canvas.create_text(
+			670, 
+			120 * (i + 1), 
+			text="", 
+			width=150, 
+			justify=RIGHT
+		)
+		self._canvas.tag_bind(t, "<Button>", f)
+		
+		# create a box around the whole thing
+		self._canvas.create_rectangle(
+			530,
+			120 * (i + 1) - 50,
+			730,
+			120 * (i + 1) + 50,
+			fill="",
+			outline=c,
+			width=1.5
+		)
 			
 	def draw_hand_area(self):
+		'''Draw the area where the hands for the players are displayed.'''
+		
 		self._hands = {}
 		
 		# this is where the cards are
 		for i, c in enumerate(self.players):
-			self._canvas.create_rectangle(550, 120 * (i + 1) - 20, 580, 120 * (i + 1) + 10, fill=c, outline="black")
-			self._hands[c] = self._canvas.create_text(670, 120 * (i + 1), text="", width=150, justify=RIGHT)
-			
-			# create a box around the whole thing
-			self._canvas.create_rectangle(
-				530,
-				120 * (i + 1) - 50,
-				730,
-				120 * (i + 1) + 50,
-				fill="",
-				outline=c,
-				width=1.5
-			)
+			self.draw_hand_area_section(c, i)
 			
 		# and a box around everything
 		self._canvas.create_rectangle(
@@ -558,6 +617,17 @@ class CatanApp():
 			width=1.5,
 			dash=(2, 4)
 		)
+		
+	def steal_from_player(self, from_player):
+		'''Steal from player of given player color.
+		Called by selecting player color in robber motion.'''
+		
+		to_player = self.players[self._turn]
+		r = self._map.robber_steal(from_player, to_player)
+		self.update_hand(from_player)
+		self.update_hand(to_player)
+		print "Stole {} from {} and gave to {}".format(r, from_player, to_player)
+		self.change_to_state("gameplay")
 		
 	def change_status_turn(self, decr=False):
 		self._next_turn(decr)
@@ -726,6 +796,8 @@ class CatanApp():
 				self.change_to_state("first road placement")
 			elif self._state == "second settlement placement":
 				self.change_to_state("second road placement")
+			elif self._state == "additional settlement placement":
+				self.change_to_state("gameplay")
 		else:
 			print "Failed to build {} settlement at {}".format(color, v)
 			self.post_status_note("That building spot is too close to an existing settlement", error=True)
