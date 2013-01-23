@@ -196,18 +196,44 @@ class MapGen():
     def get_nodes(self):
         return self._vertex_set
     
+    def _has_road(self, v1, v2):
+        '''True iff the road from v1 to v2 has been built.'''
+        
+        return (v1, v2) in self._roads
+    
+    def _road_connects_same_color_settlement(self, v1, v2, color):
+        '''True iff this road connects to a settlement of the same color.'''
+        
+        return (v1 in self._settlements and self._settlements[v1].color() == color) or \
+            (v2 in self._settlements and self._settlements[v2].color() == color)
+            
+    def _road_connects_same_color_road(self, v1, v2, color):
+        '''True iff this road connects to another road of the same color.'''
+        
+        return self.get_player(color).has_road_to(v1) or self.get_player(color).has_road_to(v2)
+    
     def add_road(self, v1, v2, color):
         '''Add a road of the given color to the map.
+        Rules:
+        - (v1, v2) is not an existing road
+        - at least one of (v1, v2) must connect to a same color settlement OR
+        - at least one of (v1, v2) must connect to a same color road
         Road spans between v1 and v2.'''
         
-        if (v1 not in self._settlements and v2 not in self._settlements) or \
-           (v1 in self._settlements and self._settlements[v1].color() != color) or \
-           (v2 in self._settlements and self._settlements[v2].color() != color) or \
-           (v1, v2) in self._roads:
+        if v1[0] > v2[0]:
+            v1, v2 = v2, v1
+            
+        p = self.get_player(color)
+        
+        # first condition only applies to first 2 roads
+        if self._has_road(v1, v2) or \
+        not (self._road_connects_same_color_settlement(v1, v2, color) or \
+        (self._road_connects_same_color_road(v1, v2, color) and \
+        p.get_num_roads() >= 2)):
             return False
         else:
             self._roads.update((v1, v2))
-            self.get_player(color).add_road(v1, v2)
+            p.add_road(v1, v2)
             return True
         
     def has_road(self, v1, v2):
@@ -224,11 +250,17 @@ class MapGen():
         
         if v not in self.available_settlement_set:
            return False
+       
+        p = self.get_player(color)
+        
+        # cannot build settlements in the middle of nowhere
+        if p.get_num_settlements() >= 2 and not p.has_road_to(v):
+            return False
         
         if v in self._vertex_set:
             s = Settlement(v, color) 
             self._settlements[v] = s # add to the game board
-            self.get_player(color).add_settlement(s) # add to player for record-keeping
+            p.add_settlement(s) # add to player for record-keeping
             self.cull_bad_settlement_vertices(v) # make sure nothing can be built around it
             return True
         else:

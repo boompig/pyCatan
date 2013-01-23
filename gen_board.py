@@ -235,6 +235,8 @@ class CatanApp():
 					center[1] - self._grab_item["y"]
 				)
 				
+				# TODO - allow me to re-pickup the robber and move it again
+				
 				# only allow stealing from players who are adjacent to that hex
 				player_list = self._map.get_players_on_robber_hex()
 				
@@ -510,7 +512,7 @@ class CatanApp():
 			elif self._state == "move robber":
 				t = "Move the robber"
 			elif self._state == "choose player":
-				t = "Choose a player"	
+				t = "Choose a player to steal from"	
 			elif self._state == "choose building":
 				t = "Choose a building to build"
 			
@@ -583,6 +585,8 @@ class CatanApp():
 				tag="building_selection",
 				anchor=W
 			)
+			
+			# TODO - create sprite for it
 			
 			#b = self._canvas.bbox(w)
 			#self._canvas.itemconfigure(b, outline="black")

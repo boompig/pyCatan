@@ -130,15 +130,14 @@ class Player():
 		'''Return the player's hand.'''
 		
 		return self._resources
-		
-	def discard_resources(self, num):
-		'''Discard num resources.
-		Remove from player.
-		Return the resources.
-		Player chooses this
-		'''
 	
-		pass
+	def has_road_to(self, v):
+		'''Return True iff this player has a road leading to vertex v.'''
+		
+		for road in self._roads:
+			if v in road:
+				return True
+		return False
 	
 if __name__ == "__main__":
 	p = Player()
