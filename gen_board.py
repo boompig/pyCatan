@@ -342,20 +342,23 @@ class CatanApp():
 		#self._roll_button.place(x=600, y=20)
 		#self._roll_button.pack()
 		
-		self._canvas.create_window(100, self.height + 10, window=self._roll_button, anchor=S)
+		self._canvas.create_window(60, self.height + 10, window=self._roll_button, anchor=S)
 		
 		l = Label(frame1, textvar=self._roll_var)
 		l.place(x=600, y=120)
 		l.pack()
 		
+		f = lambda: self.change_to_state("choose building")
+		
 		self._build_button = Button(
 			frame1, 
 			text="Build settlement", 
-			command=self.allow_build_settlement,
+			#command=self.allow_build_settlement,
+			command=f,
 			state=DISABLED
 		)
 		
-		self._canvas.create_window(250, self.height + 10, window=self._build_button, anchor=S)
+		self._canvas.create_window(170, self.height + 10, window=self._build_button, anchor=S)
 		
 		self.draw_robber()
 		# bind events to the robber
@@ -456,9 +459,19 @@ class CatanApp():
 			# re-enable the roll button
 			self._roll_button.config(state=NORMAL)
 			self._build_button.config(state=NORMAL)
+		elif self._state == "choose building":
+			# hide the hand while building
+			for item in self._canvas.find_withtag("hand_area_section"):
+				self._canvas.itemconfigure(item, state=HIDDEN)
+				
+			for item in self._canvas.find_withtag("building_selection"):
+				self._canvas.itemconfigure(item, state=NORMAL)
+			
 		elif self._state == "additional settlement placement":
 			self._roll_button.config(state=DISABLED)
 			self._build_button.config(state=DISABLED)
+			
+			
 			
 			#TODO only allow building in places which attach to the road
 			
@@ -497,7 +510,9 @@ class CatanApp():
 			elif self._state == "move robber":
 				t = "Move the robber"
 			elif self._state == "choose player":
-				t = "Choose a player"
+				t = "Choose a player"	
+			elif self._state == "choose building":
+				t = "Choose a building to build"
 			
 		self._canvas.itemconfigure(self._note, text=t, fill=c)
 				
@@ -541,10 +556,41 @@ class CatanApp():
 			for rect in self._canvas.find_withtag("player_hand_rect"):
 				self._canvas.itemconfigure(rect, state=DISABLED)
 			# the usual stuff will be enabled when gameplay is resumed
+		elif self._state == "choose building":
+			# hide the hand while building
+			for item in self._canvas.find_withtag("hand_area_section"):
+				self._canvas.itemconfigure(item, state=NORMAL)
+				
+			for item in self._canvas.find_withtag("building_selection"):
+				self._canvas.itemconfigure(item, state=HIDDEN)
 		
+	def draw_build_menu(self):
+		'''Draw the build menu.'''
+		
+		x = 550
+		y_start = 100
+		y_incr = 70
+		build_list = ["settlement", "city", "road"]
+		
+		for i in range(len(build_list)):
+			l = Label(self._canvas, text=build_list[i], anchor=W, font=("Helvetica", 16))
+			
+			w = self._canvas.create_window(
+				x, 
+				y_start + i * y_incr, 
+				window=l, 
+				state=HIDDEN, 
+				tag="building_selection",
+				anchor=W
+			)
+			
+			#b = self._canvas.bbox(w)
+			#self._canvas.itemconfigure(b, outline="black")
 		
 	def draw_status_area(self):
 		'''Draw whose turn it is in top-left corner.'''
+		
+		self.draw_build_menu()
 		
 		# this is where the turn is
 		self._canvas.create_text(50, 30, text="Current turn:")
@@ -572,7 +618,7 @@ class CatanApp():
 			120 * (i + 1) + 10, 
 			fill=c, 
 			outline="black",
-			tag=("player_hand_rect", t),
+			tag=("player_hand_rect", t, "hand_area_section"),
 			state=DISABLED,
 			activeoutline="gold4",
 		)
@@ -582,7 +628,8 @@ class CatanApp():
 			120 * (i + 1), 
 			text="", 
 			width=150, 
-			justify=RIGHT
+			justify=RIGHT,
+			tag="hand_area_section"
 		)
 		self._canvas.tag_bind(t, "<Button>", f)
 		
@@ -594,6 +641,7 @@ class CatanApp():
 			120 * (i + 1) + 50,
 			fill="",
 			outline=c,
+			tag="hand_area_section",
 			width=1.5
 		)
 			
