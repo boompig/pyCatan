@@ -237,9 +237,9 @@ class MapGen():
             return False
         else:
             self._roads.update((v1, v2))
-            p.add_road(v1, v2)
             if p.get_num_roads() >= 2:
                 p.deduct_resources(cost)
+            p.add_road(v1, v2)
             return True
         
     def has_road(self, v1, v2):
@@ -270,12 +270,14 @@ class MapGen():
             return False
         
         if v in self._vertex_set:
+            if p.get_num_settlements() >= 2:
+                p.deduct_resources(cost)
+            
             s = Settlement(v, color) 
             self._settlements[v] = s # add to the game board
             p.add_settlement(s) # add to player for record-keeping
             self.cull_bad_settlement_vertices(v) # make sure nothing can be built around it
-            if p.get_num_settlements() >= 2:
-                p.deduct_resources(cost)
+            
             return True
         else:
             return False
