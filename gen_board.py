@@ -174,7 +174,7 @@ class CatanApp():
 	For now side distances are determined statically. Can dynamically allocate them at a later point.'''
 	
 	height = 550
-	width = 750
+	width = 900
 	minor_horiz_dist = 30
 	major_horiz_dist = 60
 	minor_vert_dist = 50
@@ -414,7 +414,9 @@ class CatanApp():
 			self.post_status_note("You cannot afford to buy a development card", True)
 		else:
 			self.post_status_note("Successfully bought development card")
+			self.update_hand(color)
 			print "{} bought development card '{}'".format(color, card)
+			self.update_dev_cards(color)
 		
 	def create_build_buttons(self):
 		'''Create buttons to build various structures.'''
@@ -519,6 +521,15 @@ class CatanApp():
 		self._canvas.itemconfigure(
 			self._hands[color], 
 			text=self._map.get_player(color).get_printable_hand().replace(",", "\n")
+		)
+		
+	def update_dev_cards(self, color):
+		'''Update development card display in GUI for player of given color.'''
+		
+		item = self._canvas.find_withtag("dev_area_section_%s" % color)
+		self._canvas.itemconfigure(
+			item, 
+			text=self._map.get_player(color).get_printable_dev_cards().replace(",", "\n")
 		)
 		
 	def act_on_start_state(self):
@@ -720,6 +731,12 @@ class CatanApp():
 		
 		self.draw_hand_area()
 		
+	def update_vp(self, color):
+		'''Update the victory points for a player of the given color.'''
+		
+		item = self._canvas.find_withtag("player_hand_rect_%s_text" % color)
+		self._canvas.itemconfigure(item, text=str(self._map.get_player_vp(color)))
+		
 	def draw_hand_area_section(self, c, i):
 		f = lambda event : self.steal_from_player(c)
 		t = "player_hand_rect_%s" % c
@@ -729,11 +746,20 @@ class CatanApp():
 			120 * (i + 1) - 20, 
 			580, 
 			120 * (i + 1) + 10, 
-			fill=c, 
+			fill=c,
 			outline="black",
 			tag=("player_hand_rect", t, "hand_area_section"),
 			state=DISABLED,
 			activeoutline="gold4",
+		)
+		
+		self._canvas.create_text(
+			565,
+			120 * (i + 1) - 5,
+			text="0",
+			tag=t + "_text",
+			font=("Helvetica", 14),
+			fill="white"
 		)
 		
 		self._hands[c] = self._canvas.create_text(
@@ -746,11 +772,20 @@ class CatanApp():
 		)
 		self._canvas.tag_bind(t, "<Button>", f)
 		
+		self._canvas.create_text(
+			770,
+			120 * (i + 1),
+			text="NO  DEV CARDS",
+			width = 150,
+			justify=RIGHT,
+			tag="dev_area_section_%s" % c
+		)
+		
 		# create a box around the whole thing
 		self._canvas.create_rectangle(
 			530,
 			120 * (i + 1) - 50,
-			730,
+			850,
 			120 * (i + 1) + 50,
 			fill="",
 			outline=c,
@@ -771,7 +806,7 @@ class CatanApp():
 		self._canvas.create_rectangle(
 			525,
 			65,
-			735,
+			855,
 			535,
 			fill="",
 			outline="black",
@@ -955,8 +990,7 @@ class CatanApp():
 			tag = "settlement_oval_{}_{}".format(*v)
 			self._canvas.tag_bind(tag, "<Button>", func=f)
 			
-			# no need for this
-			#self.cull_adjacent_settlement_nodes(self._canvas, v)
+			self.update_vp(color)
 			
 			if self._state == "first settlement placement":
 				self.change_to_state("first road placement")
@@ -1000,6 +1034,7 @@ class CatanApp():
 		
 		# reflect changes in the model
 		self._map.add_city(v, color)
+		self.update_vp(color)
 		self.change_to_state("gameplay")
 		
 	@staticmethod

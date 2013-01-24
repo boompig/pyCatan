@@ -58,6 +58,12 @@ class MapGen():
         
         pass
     
+    def get_player_vp(self, color):
+        '''Return number of victory points for player of given color.'''
+        
+        p = self.get_player(color)
+        return p.get_num_vp()
+    
     def get_development_card(self, color):
         '''Give out a development card to the player if they can afford it.
         Return the development card, or None if none given.'''
@@ -345,6 +351,7 @@ class MapGen():
         else:
             self._settlements[v].upgrade()
             p.deduct_resources(cost)
+            p.update_city()
             return True
         
     def _create_vertex_set(self):

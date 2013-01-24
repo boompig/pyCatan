@@ -13,7 +13,7 @@ class Player():
 		self._settlements = []
 		self._roads = []
 		
-		self._dev_cards = []
+		self._dev_cards = {}
 		
 		# TODO here have stash of settlements, cities, roads that are unbuilt
 		# TODO here have 
@@ -52,6 +52,13 @@ class Player():
 		'''Add the given settlement to the list of settlements for this player.'''
 		
 		self._settlements.append(s)
+		self._vp += 1
+		
+	def update_city(self):
+		'''Update a city of this player.
+		Used to update VP count.'''
+		
+		self._vp += 1
 		
 	def add_road(self, v1, v2):
 		'''Add a road.'''
@@ -96,6 +103,16 @@ class Player():
 			s += "{} x {}, ".format(r, n)
 			
 		return s[:-2]
+	
+	def get_printable_dev_cards(self):
+		'''Return development cards in the player's hand.'''
+		
+		s = ""
+		
+		for r, n in self._dev_cards.iteritems():
+			s += "{} x {}, ".format(r, n)
+			
+		return s[:-2]
 		
 	def steal_resource(self):
 		'''Return (discard) random resource. 
@@ -131,7 +148,15 @@ class Player():
 	def add_development_card(self, dc):
 		'''Add given development card dc.'''
 		
-		self._dev_cards.append(dc)
+		if dc not in self._dev_cards:
+			self._dev_cards[dc] = 0
+		
+		self._dev_cards[dc] += 1
+		
+	def get_development_cards(self):
+		'''Return development cards for this player.'''
+		
+		return self._dev_cards
 	
 	def get_hand(self):
 		'''Return the player's hand.'''
