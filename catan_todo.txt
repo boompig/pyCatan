@@ -1,0 +1,7 @@
+Web Dev Questions
+	- is padding included in width?
+	- tiles?
+
+Catan Basic Refactoring
+	- decide on a layout (maybe mock it up with HTML + screenshots)
+	- add second canvas to manage control panel
