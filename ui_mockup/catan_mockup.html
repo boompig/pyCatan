@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset='utf-8' /> 
+		<title>Catan UI Mock-Up</title>
+	
+		<!-- question - does this go in the header, or just under HTML -->
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		
+		<!-- TODO add JQuery -->
+		<!-- Google-hosted JQuery -->
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+		
+		<script type="text/javascript">
+			console.log("process this");
+		
+			$("document").ready(function() {
+				console.log("stuff here");
+				//attach_buy_event();
+			});
+			
+			/*function attach_buy_event() {
+				$("#buy_button").click(function() {
+					console.log("open!");
+				});
+			} */
+		</script>
+	</head>
+	<body>
+		<div id="container">
+			<div id="app_container">
+				<div id="app">
+					<div id="resource_bar">
+						Resources are up here
+					</div>
+					<div id="action_window">
+						<div id="action_tile_container">
+							<div id="build_road_tile" class="action_tile buy_tile">Road</div>
+							<div id="build_settlement_tile" class="action_tile buy_tile">Settlement</div>
+							<div id="build_city_tile" class="action_tile buy_tile">City</div>
+							<div id="buy_development_card_tile" class="action_tile buy_tile">Dev. Card</div>
+						</div> <!-- end action window -->
+						<div id="action_buttons">
+							<button id="buy_button" class="action_button">Buy</button>
+							<button id="trade_button" class="action_button">Trade</button>
+							<button id="end_turn_button" class="action_button">End Turn</button>
+						</div> <!-- end action button -->
+					</div> <!-- end action window -->
+					<div id="board">
+						Board goes here
+					</div>
+				</div> <!-- end app -->
+			</div> <!-- end app_container -->
+		</div> <!-- end container -->
+	</body>
+</html>

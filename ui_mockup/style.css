@@ -1,0 +1,102 @@
+body {
+	/* clear all the things */
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	margin: 0;
+	clear: both;
+	display: block;
+	
+	border-width: .5;
+}
+
+#container {
+	/* center */
+	margin: 100 auto;
+	width: 70%;
+	height: 100%;
+	display: block;
+	
+	
+}
+
+/* the whole thing */
+#app_container{
+	display: block;
+	
+	height: 400;
+	width: 600;
+	clear: both;
+	
+	padding: 0;
+	margin: 0;
+}
+
+#app {
+	border-style: solid;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	clear: both;
+	display: block;
+}
+
+#resource_bar {
+	height: 70;
+	float: top;
+	width: 100%;
+	/*display: block;
+	
+	/* this should be on the inside */
+	padding: 10;
+	
+	border-style: dashed;
+}
+
+#action_window {
+	float: right;
+	width: 160;
+	height: 100%;
+	
+	border-style: dashed;
+}
+
+#action_tile_container {
+	width: 100%;
+	float: top;
+}
+
+.action_tile {
+	float: left;
+	width: 39%;
+	padding: 5;
+	text-align: center;
+	
+	border-style: dashed;
+}
+
+/**
+ * The one with all the tiles
+ */
+#board {
+	/*height: 100%;
+	width: 100%;
+	display: inline-block;*/
+	border-style: dashed;
+	height: 100%;
+	float: left;
+}
+
+#action_buttons {
+	float: bottom;
+	height: 50;
+	/*display: inline-block;*/
+}
+
+/**
+ * Style the buttons
+ */
+.action_button {
+	background-color: #cccccc;
+}
