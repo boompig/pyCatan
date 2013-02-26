@@ -9,6 +9,7 @@ from the internet is getting really fucking annoying -->
 		
 		<!-- general CSS -->
 		<link rel="stylesheet" type="text/css" href="style.css">
+		<link rel="stylesheet" type="text/css" href="player_tiles.css">
 		
 		<!-- JQuery -->
 		<script src="jquery-1.9.1.min.js"></script>
@@ -23,15 +24,17 @@ from the internet is getting really fucking annoying -->
 				$("#action_tile_container").hide();
 				// initially hide trade panel
 				$("#trade_panel").hide();
-				
+								
 				set_action_button_events();
 				
 				// generate stuff in template
 				Catan.generate_template_player_stats();
 				
+				// add template to non-template sections
 				Catan.generate_resource_bar();
 				Catan.generate_player_tiles();
 				Catan.generate_trade_panel();
+				Catan.generate_buy_buttons();
 			});
 			
 			function set_trade_button_events() {
@@ -70,6 +73,14 @@ from the internet is getting really fucking annoying -->
 				<img class="resource_logo" />
 				<span class="resource_count">0</span>
 			</div> <!-- end resource container -->
+			
+			<button class="buy_button">
+				<span class="buy_item_name"></span>
+				<span class="buy_item_cost">
+					<span class="resource_logo_small template" />
+				</span>
+			</button> <!-- end buy button-->
+			
 			<div class="player_tile">
 				<div class="player_tile_banner">
 					<span class="player_color_square"></span>
@@ -88,9 +99,9 @@ from the internet is getting really fucking annoying -->
 				<span class="trade_resource">
 					<span class="trade_resource_logo"></span>
 					<span class="trade_resource_amount">0</span>
-				</span>
+				</span> <!-- end trade resource -->
 				<button class="less_trade_button trade_button">-1</button>
-			</div>
+			</div> <!-- end trade resource tile -->
 		</div> <!-- end templates -->
 	
 		<div id="container">
@@ -106,14 +117,10 @@ from the internet is getting really fucking annoying -->
 				<div id="player_tile_container">
 					<!-- auto-generated code here -->
 				</div><!-- end player tile container -->
-				
 					
 				<div id="action_window">
 					<div id="action_tile_container">
-						<button class="action_tile">Settlement</button>
-						<button class="action_tile">City</button>
-						<button class="action_tile">Road</button>
-						<button class="action_tile">Development Card</button>
+						<!-- auto-generated code goes here -->
 					</div> <!-- end action tile container -->
 					<div id="action_buttons">
 						<button id="buy_button" class="action_button">Buy</button>

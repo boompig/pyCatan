@@ -59,122 +59,33 @@ button {
 
 #resource_bar {
 	height: 3em;
-	/*float: top;*/
 	width: 100%;
 	display: block;
-	/*margin-top: 1em;*/
 	margin-bottom: 1em;
-	
 }
 
 .resource_container {
 	float: left;
-	/*margin: 0 2em;*/
 	width: 20%;
 	display: inline;
-	/*vertical-align: center;*/
 	height: 100%;
-	/*margin: auto;*/
-	padding: 0;
+	
 	text-align: center;
 }
 
 .resource_logo {
-	/*float: left;*/
-	display: inline;
-	margin: 0 .5em;
-	text-align: center;
+	/*margin: 0 .5em;
+	text-align: center;*/
 }
 
 .resource_count {
-	/*float: left;*/
-	/*display: inline;*/
-	
-	/*margin: auto;*/
 	
 	/* vertically align with the resource logos */
-	display: table-cell;
-	vertical-align: middle;
+	vertical-align: middle; 
 	height: 100%;
 }
 
 /***************************** END RESOURCE BAR  *************************/
-
-/***************************** PLAYER TILES ***************************/
-
-#player_tile_container {
-	float: right;
-	width: 200px;
-	height: 100%;
-	
-	/*border-style: dashed;*/
-	display: inline-block;
-	position: relative;
-}
-
-.player_tile {
-	padding-left: 1em;
-	margin: .3em 0;
-	
-	padding-bottom: .2em;
-	
-	/* border (rounded) */
-	-moz-border-radius: 15px;
-	border-radius: 15px;
-	border-style: solid;
-	border-width: .1em;
-	border-color: #319FE8; /* very light blue */
-}
-
-.player_tile_banner {
-	padding-top: .3em;
-	padding-bottom: .3em;
-	text-align: center;
-}
-
-.player_name {
-	/* vertically align with the color square */
-	display: table-cell;
-	vertical-align: middle;
-	height: 100%;
-	
-	/* Center the damn thing */
-	/*margin: 0 auto;
-	text-align: center;*/
-	padding-left: 1em;
-	
-	/* name should be bigger */
-	font-size: 1.2em;
-	font-weight: bold;
-}
-
-.player_color_square {
-	height: 25px;
-	width: 25px;
-	display: table-cell;
-	
-	/* border (rounded) */
-	-moz-border-radius: 5px;
-	border-radius: 5px;
-	border-style: solid;
-	border-width: .2em;
-	border-color: black; /* very light blue */
-}
-
-.player_stat_container {
-	padding-left: 1.5em;
-	height: 100%;
-}
-
-.player_stat {
-	display: block;
-}
-
-.player_turn .player_color_square {
-	border-width: .3em;
-}
-
-/******************** END PLAYER TILES **************************/
 
 /******************** TRADE PANEL ********************/
 
@@ -213,7 +124,7 @@ button {
 
 #action_tile_container {
 	display: inline-block;
-	width: 60%;
+	width: 70%;
 }
 
 .action_tile {
@@ -235,8 +146,19 @@ button {
 /**
  * Style the buttons
  */
-.action_button {
-	
+.buy_button {
+	margin: .5em;
+}
+
+.resource_logo_small {
+	background-position: right center;
+	background-repeat: no-repeat;
+	background-size: 15px 15px;
+	padding-left: 20px;
+}
+
+.buy_item_name {
+	vertical-align: text-top;
 }
 
 /*************** END ACTION WINDOW ***********/
@@ -257,8 +179,6 @@ button {
 	
 	display: inline;
 }
-
-
 
 /****************** CONSOLE ***************************/
 

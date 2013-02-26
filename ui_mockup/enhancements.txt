@@ -1,0 +1,4 @@
+Improvements
+	- move trade to top window
+	- add icons and tooltips to player stats
+	- add resource icons

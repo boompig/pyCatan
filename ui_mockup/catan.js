@@ -167,6 +167,55 @@ var Catan = {
 	},
 	
 	/**
+	 * Map from items you can buy to their cost.
+	 */
+	buy_items : {
+		"Settlement" : ["wood", "brick", "sheep", "grain"],
+		"City" : ["grain", "grain", "ore", "ore", "ore"],
+		"Road" : ["wood", "brick"],
+		"Development Card" : ["grain", "ore", "sheep"]
+	},
+	
+	/**
+	 * Add an on-click event to the a buy button.
+	 * The item to buy is given.
+	 */
+	add_buy_button_event: function (button, buy_item) {
+		$(button).click(function() {
+			//console.log(buy_item);
+			$("#console").append("[GAME] Built " + buy_item + "\n");
+		});
+	},
+	
+	/**
+	 * Generate buttons to buy various items
+	 */
+	generate_buy_buttons: function() {
+		var source = $("#templates .buy_button");
+		var parent = $("#action_tile_container");
+		var dom_item, img_source, img;
+		
+		$.each(this.buy_items, function(item, cost) {
+			dom_item = $(source).clone().attr("id", "buy_button_" + item.hashCode());
+			img_src = $(dom_item).find(".resource_logo_small.template");
+			//console.log(cost);
+			
+			for(var i = 0; i < cost.length; i++) {
+				img = $(img_src).clone().removeClass("template").css("background-image", "url(" + cost[i] + "_circle.png)");
+				$(dom_item).find(".buy_item_cost").append(img);
+			}
+			
+			$(img_src).remove();
+			$(dom_item).find(".buy_item_name").text(item);
+			
+			// cannot use 'this' in current scope
+			Catan.add_buy_button_event(dom_item, item);
+			
+			$(parent).append(dom_item);
+		});
+	},
+	
+	/**
 	 * Generate the stats directly to the template.
 	 * Run this before processing/replicating the template.
 	 */
