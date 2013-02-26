@@ -1,57 +1,134 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- TODO: download JQuery to laptop because working on this when disconnected
+from the internet is getting really fucking annoying -->
+
+<html>
 	<head>
-		<meta charset='utf-8' /> 
-		<title>Catan UI Mock-Up</title>
-	
-		<!-- question - does this go in the header, or just under HTML -->
-		<link rel="stylesheet" type="text/css" href="style.css" />
+		<meta charset="UTF-8" />
 		
-		<!-- TODO add JQuery -->
-		<!-- Google-hosted JQuery -->
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+		<!-- general CSS -->
+		<link rel="stylesheet" type="text/css" href="style.css">
 		
-		<script type="text/javascript">
-			console.log("process this");
+		<!-- JQuery -->
+		<script src="jquery-1.9.1.min.js"></script>
 		
-			$("document").ready(function() {
-				console.log("stuff here");
-				//attach_buy_event();
+		<!-- Catan-related script -->
+		<script src="catan.js"></script>
+		
+		<!-- basic script -->
+		<script>
+			$(document).ready(function() {
+				//initially hide action tiles
+				$("#action_tile_container").hide();
+				// initially hide trade panel
+				$("#trade_panel").hide();
+				
+				set_action_button_events();
+				
+				// generate stuff in template
+				Catan.generate_template_player_stats();
+				
+				Catan.generate_resource_bar();
+				Catan.generate_player_tiles();
+				Catan.generate_trade_panel();
 			});
 			
-			/*function attach_buy_event() {
-				$("#buy_button").click(function() {
-					console.log("open!");
+			function set_trade_button_events() {
+				$("#trade_button").click(function() {
+					$("#trade_panel").show();
 				});
-			} */
+				
+				$(".action_button").not("#trade_button").click(function() {
+					$("#trade_panel").hide();
+				});
+			}
+			
+			function set_buy_button_events() {
+				$("#buy_button").click(function() {
+					$("#action_tile_container").show();
+				});
+				
+				$(".action_button").not("#buy_button").click(function() {
+					$("#action_tile_container").hide();
+				});
+			}
+			
+			function set_action_button_events() {
+				set_buy_button_events();
+				set_trade_button_events();
+				
+				$("#end_turn_button").click(function() {
+					Catan.change_turn();
+				});
+			}
 		</script>
 	</head>
 	<body>
+		<div id="templates" style="display: none;">
+			<div class="resource_container">
+				<img class="resource_logo" />
+				<span class="resource_count">0</span>
+			</div> <!-- end resource container -->
+			<div class="player_tile">
+				<div class="player_tile_banner">
+					<span class="player_color_square"></span>
+					<span class="player_name"></span>
+				</div>
+				<div class="player_stat_container">
+					<span class="player_stat template">
+						<span class="player_stat_name"></span>
+						<span class="player_stat_value">0</span>
+					</span>
+				</div> <!-- end player stats container -->
+			</div> <!-- end player tile -->
+			
+			<div class="trade_resource_tile">
+				<button class="more_trade_button trade_button">+1</button>
+				<span class="trade_resource">
+					<span class="trade_resource_logo"></span>
+					<span class="trade_resource_amount">0</span>
+				</span>
+				<button class="less_trade_button trade_button">-1</button>
+			</div>
+		</div> <!-- end templates -->
+	
 		<div id="container">
+			<div id="resource_bar">
+				<!-- auto-generated code here -->
+			</div> <!-- end resource bar -->
+			
 			<div id="app_container">
-				<div id="app">
-					<div id="resource_bar">
-						Resources are up here
+				<div id="board">
+					<!-- TODO board goes here -->
+					Board
+				</div> <!-- end board -->				
+				<div id="player_tile_container">
+					<!-- auto-generated code here -->
+				</div><!-- end player tile container -->
+				
+					
+				<div id="action_window">
+					<div id="action_tile_container">
+						<button class="action_tile">Settlement</button>
+						<button class="action_tile">City</button>
+						<button class="action_tile">Road</button>
+						<button class="action_tile">Development Card</button>
+					</div> <!-- end action tile container -->
+					<div id="action_buttons">
+						<button id="buy_button" class="action_button">Buy</button>
+						<button id="trade_button" class="action_button">Trade</button>
+						<button id="end_turn_button" class="action_button">End Turn</button>
+					</div> <!-- end action buttons -->
+					<div id="trade_panel">
+						<!-- TODO auto-generated shit goes here -->
 					</div>
-					<div id="action_window">
-						<div id="action_tile_container">
-							<div id="build_road_tile" class="action_tile buy_tile">Road</div>
-							<div id="build_settlement_tile" class="action_tile buy_tile">Settlement</div>
-							<div id="build_city_tile" class="action_tile buy_tile">City</div>
-							<div id="buy_development_card_tile" class="action_tile buy_tile">Dev. Card</div>
-						</div> <!-- end action window -->
-						<div id="action_buttons">
-							<button id="buy_button" class="action_button">Buy</button>
-							<button id="trade_button" class="action_button">Trade</button>
-							<button id="end_turn_button" class="action_button">End Turn</button>
-						</div> <!-- end action button -->
-					</div> <!-- end action window -->
-					<div id="board">
-						Board goes here
-					</div>
-				</div> <!-- end app -->
-			</div> <!-- end app_container -->
+				</div> <!-- end action window --> 
+			</div> <!-- end app container -->
+			
+			<textarea id="console" readonly="readonly">
+				[SYS] Debug and game info gets printed here
+			</textarea>
 		</div> <!-- end container -->
 	</body>
 </html>

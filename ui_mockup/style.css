@@ -7,96 +7,271 @@ body {
 	clear: both;
 	display: block;
 	
-	border-width: .5;
+	font-family: Helvetica, Couries MS, sans-serif;
+	font-size: .9em;
 }
 
 #container {
 	/* center */
-	margin: 100 auto;
+	margin-left: auto;
+	margin-right: auto;
 	width: 70%;
 	height: 100%;
 	display: block;
 	
+	/* give some space at the top */
+	margin-top: 1em;
 	
+	clear: both;
+	padding: 0;
 }
+
 
 /* the whole thing */
 #app_container{
-	display: block;
+	display: inline-block;
 	
-	height: 400;
-	width: 600;
+	width: 100%;
 	clear: both;
 	
 	padding: 0;
 	margin: 0;
 }
 
-#app {
+button {
+	/* border (rounded) */
+	-moz-border-radius: 5px;
+	border-radius: 5px;
 	border-style: solid;
-	margin: 0;
-	padding: 0;
-	width: 100%;
-	height: 100%;
-	clear: both;
-	display: block;
+	border-width: .2em;
+	border-color: #319FE8; /* very light blue */
+	
+	/*color: #319FE8; */
+	color: #000;
+	
+	background-color: #fff;
+	
+	padding: .2em;
+	
 }
+
+/***************************** RESOURCE BAR ***********************/
 
 #resource_bar {
-	height: 70;
-	float: top;
+	height: 3em;
+	/*float: top;*/
 	width: 100%;
-	/*display: block;
+	display: block;
+	/*margin-top: 1em;*/
+	margin-bottom: 1em;
 	
-	/* this should be on the inside */
-	padding: 10;
-	
-	border-style: dashed;
 }
 
-#action_window {
+.resource_container {
+	float: left;
+	/*margin: 0 2em;*/
+	width: 20%;
+	display: inline;
+	/*vertical-align: center;*/
+	height: 100%;
+	/*margin: auto;*/
+	padding: 0;
+	text-align: center;
+}
+
+.resource_logo {
+	/*float: left;*/
+	display: inline;
+	margin: 0 .5em;
+	text-align: center;
+}
+
+.resource_count {
+	/*float: left;*/
+	/*display: inline;*/
+	
+	/*margin: auto;*/
+	
+	/* vertically align with the resource logos */
+	display: table-cell;
+	vertical-align: middle;
+	height: 100%;
+}
+
+/***************************** END RESOURCE BAR  *************************/
+
+/***************************** PLAYER TILES ***************************/
+
+#player_tile_container {
 	float: right;
-	width: 160;
+	width: 200px;
 	height: 100%;
 	
-	border-style: dashed;
+	/*border-style: dashed;*/
+	display: inline-block;
+	position: relative;
+}
+
+.player_tile {
+	padding-left: 1em;
+	margin: .3em 0;
+	
+	padding-bottom: .2em;
+	
+	/* border (rounded) */
+	-moz-border-radius: 15px;
+	border-radius: 15px;
+	border-style: solid;
+	border-width: .1em;
+	border-color: #319FE8; /* very light blue */
+}
+
+.player_tile_banner {
+	padding-top: .3em;
+	padding-bottom: .3em;
+	text-align: center;
+}
+
+.player_name {
+	/* vertically align with the color square */
+	display: table-cell;
+	vertical-align: middle;
+	height: 100%;
+	
+	/* Center the damn thing */
+	/*margin: 0 auto;
+	text-align: center;*/
+	padding-left: 1em;
+	
+	/* name should be bigger */
+	font-size: 1.2em;
+	font-weight: bold;
+}
+
+.player_color_square {
+	height: 25px;
+	width: 25px;
+	display: table-cell;
+	
+	/* border (rounded) */
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	border-style: solid;
+	border-width: .2em;
+	border-color: black; /* very light blue */
+}
+
+.player_stat_container {
+	padding-left: 1.5em;
+	height: 100%;
+}
+
+.player_stat {
+	display: block;
+}
+
+.player_turn .player_color_square {
+	border-width: .3em;
+}
+
+/******************** END PLAYER TILES **************************/
+
+/******************** TRADE PANEL ********************/
+
+#trade_panel {
+	width: 50%;
+	margin-bottom: 1em;
+	margin-top: 1em;
+}
+
+.trade_resource_tile {
+	width: 20%;
+	display: inline-block;
+	text-align: center;
+	margin: 0 auto;
+}
+
+.more_trade_button, .trade_resource, .less_trade_button {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: .3em;
+	margin-bottom: .3em;
+	
+}
+
+/******************** END TRADE PANEL *****************/
+
+/*************** ACTION WINDOW ***********/
+
+#action_window {
+	width: 100%;
+	height: 100%;
+	
+	display: inline-block;
 }
 
 #action_tile_container {
-	width: 100%;
-	float: top;
+	display: inline-block;
+	width: 60%;
 }
 
 .action_tile {
 	float: left;
-	width: 39%;
-	padding: 5;
+	/*padding: .5em 1em;*/
+	width: 40%;
 	text-align: center;
 	
-	border-style: dashed;
-}
-
-/**
- * The one with all the tiles
- */
-#board {
-	/*height: 100%;
-	width: 100%;
-	display: inline-block;*/
-	border-style: dashed;
-	height: 100%;
-	float: left;
+	margin-right: .5em;
+	margin-top: .5em;
 }
 
 #action_buttons {
-	float: bottom;
-	height: 50;
-	/*display: inline-block;*/
+	display: inline-block;
+	float: right;
+	height: 100%;
 }
 
 /**
  * Style the buttons
  */
 .action_button {
-	background-color: #cccccc;
+	
 }
+
+/*************** END ACTION WINDOW ***********/
+
+/**
+ * The one with all the tiles
+ */
+#board {
+	/** just for testing purposes, we'll assign a fixed height of 600px */
+	height: 600px;
+	width: 700px;
+	
+	border-style: dashed;
+	/*height: 100%;*/
+	float: left;
+	
+	margin-bottom: .5em;
+	
+	display: inline;
+}
+
+
+
+/****************** CONSOLE ***************************/
+
+#console {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	clear: both;
+	border-style: dashed;
+	resize: none;
+	cursor: default;
+	text-align: left;
+	
+	/* TODO text area should auto-scroll to the bottom */
+}
+/****************** END CONSOLE ***********************/
