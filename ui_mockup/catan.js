@@ -63,6 +63,8 @@ var Catan = {
 		var t = $("#console").text();
 		var new_t = "[ROLL] " + String(this.roll());
 		$("#console").text(t + "\n" + new_t);
+		
+		this.distribute_resources();
 	},
 	
 	/**
@@ -79,7 +81,7 @@ var Catan = {
 		var name = $(".player_turn").find(".player_name").text();
 		return this.player_names.indexOf(name);
 	},
-	
+
 	generate_trade_panel: function() {
 		var template = $("#templates .trade_resource_tile");
 		var parent = $("#trade_panel");
@@ -125,15 +127,18 @@ var Catan = {
 		//console.log(this.resources);
 		
 		var resource_container = $("#templates").find(".resource_container");
+		var resource, new_container;
 		
 		for (var i = 0; i < this.resources.length; i++) {
-			var resource = this.resources[i];
-			var new_container = resource_container.clone().attr("id", resource + "_container");
+			resource = this.resources[i];
+			new_container = resource_container.clone().attr("id", resource + "_container");
 			
 			// update logo and count IDs as well
 			// also create img source
-			$(new_container).find(".resource_logo").attr("id", resource + "_logo").attr("src", resource + "_circle.png");
-			$(new_container).find(".resource_count").attr("id", resource + "_count");
+			//$(new_container).find(".resource_logo").attr("id", resource + "_logo").attr("src", resource + "_circle.png");
+			
+			$(new_container).css("background-image", "url(" + resource +"_circle.png)");
+			//$(new_container).find(".resource_count").attr("id", resource + "_count");
 		
 			$("#resource_bar").append(new_container);
 			//console.log(this.resources[i]);
@@ -183,8 +188,53 @@ var Catan = {
 	add_buy_button_event: function (button, buy_item) {
 		$(button).click(function() {
 			//console.log(buy_item);
-			$("#console").append("[GAME] Built " + buy_item + "\n");
+			$("#console").prepend("[GAME] Built " + buy_item + "\n");
 		});
+	},
+	
+	/**
+	 * Distribute resources to the players.
+	 * Just some random distribution.
+	 */
+	distribute_resources: function() {
+		var num_resources, resource, i, player_tile;
+		console.log("D!");
+	
+		for (var p = 0; p < this.player_names.length; p++) {
+			// up to 3 resources
+			num_resources = this.rand_int(3);
+			
+			for (i = 0; i < num_resources; i++) {
+				resource = this.rand_choice(this.resources);
+				//this.add_resource_to_player(resource, this.player_names[p]);
+			}
+			
+			// update hand for this player
+			player_tile = $("#player_tile_" + this.get_player_id(this.player_names[p])).find(".player_stat_rc").find(".player_stat_value").text(String(num_resources));
+		}
+	},
+	
+	/**
+	 * Return an int with equal probability in interval [0, max]
+	 * I think it's slightly 0-biased (by an insignificant amount for most applications).
+	 */
+	rand_int: function(max) {
+		return Number(Math.floor(Math.random() * (max + 1)));
+	},
+	
+	/**
+	 * Return a random choice from a given list.
+	 */
+	rand_choice: function(list) {
+		return list[this.rand_int(list.length)];
+	},
+	
+	/**
+	 * Add the given resource to the given player.
+	 */
+	add_resource_to_player: function(resource, player) {
+		// for now
+		console.log("[ROLL] " + player + " <-- " + resource)
 	},
 	
 	/**
@@ -225,7 +275,7 @@ var Catan = {
 		
 		for(var i = 0; i < this.player_stats.length; i++) {
 			var stat_name = this.player_stats[i];
-			var stat_id = stat_name[0] + stat_name.split(" ")[1][0]
+			var stat_id = (stat_name[0] + stat_name.split(" ")[1][0]).toLowerCase();
 			var stat = $(item).clone().addClass("player_stat_" + stat_id).removeClass("template");
 			$(stat).find(".player_stat_name").text(stat_name)
 			$(parent).append(stat);

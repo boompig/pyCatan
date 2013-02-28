@@ -15,7 +15,7 @@ body {
 	/* center */
 	margin-left: auto;
 	margin-right: auto;
-	width: 70%;
+	width: 800px;
 	height: 100%;
 	display: block;
 	
@@ -35,7 +35,8 @@ body {
 	clear: both;
 	
 	padding: 0;
-	margin: 0;
+	margin: 0 auto;
+	margin-top: -50px;
 }
 
 button {
@@ -48,41 +49,36 @@ button {
 	
 	/*color: #319FE8; */
 	color: #000;
-	
 	background-color: #fff;
-	
 	padding: .2em;
-	
 }
 
 /***************************** RESOURCE BAR ***********************/
 
 #resource_bar {
-	height: 3em;
-	width: 100%;
+	height: 5em;
+	width: 75%;
 	display: block;
+	margin-top: 2em;
 	margin-bottom: 1em;
 }
 
 .resource_container {
 	float: left;
-	width: 20%;
+	width: 15%;
 	display: inline;
 	height: 100%;
 	
 	text-align: center;
-}
-
-.resource_logo {
-	/*margin: 0 .5em;
-	text-align: center;*/
+	
+	/* Background image config */
+	background-position: left top;
+	background-repeat: no-repeat;
+	background-size: 40px 40px;
 }
 
 .resource_count {
-	
-	/* vertically align with the resource logos */
-	vertical-align: middle; 
-	height: 100%;
+	vertical-align: middle;
 }
 
 /***************************** END RESOURCE BAR  *************************/
@@ -119,6 +115,7 @@ button {
 	width: 100%;
 	height: 100%;
 	
+	margin-top: 1em;
 	display: inline-block;
 }
 
@@ -167,17 +164,13 @@ button {
  * The one with all the tiles
  */
 #board {
-	/** just for testing purposes, we'll assign a fixed height of 600px */
-	height: 600px;
-	width: 700px;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
 	
-	border-style: dashed;
-	/*height: 100%;*/
-	float: left;
-	
+	clear: both;
 	margin-bottom: .5em;
-	
-	display: inline;
+	display: inline-block;
 }
 
 /****************** CONSOLE ***************************/
@@ -191,6 +184,7 @@ button {
 	resize: none;
 	cursor: default;
 	text-align: left;
+	height: 100px;
 	
 	/* TODO text area should auto-scroll to the bottom */
 }

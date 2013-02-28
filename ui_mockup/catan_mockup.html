@@ -10,12 +10,15 @@ from the internet is getting really fucking annoying -->
 		<!-- general CSS -->
 		<link rel="stylesheet" type="text/css" href="style.css">
 		<link rel="stylesheet" type="text/css" href="player_tiles.css">
+		<link rel="stylesheet" type="text/css" href="hex.css">
 		
 		<!-- JQuery -->
 		<script src="jquery-1.9.1.min.js"></script>
 		
-		<!-- Catan-related script -->
+		<!-- Catan-related scripts -->
 		<script src="catan.js"></script>
+		<script src="catan_board.js"></script>
+		<script src="catan_player.js"></script>
 		
 		<!-- basic script -->
 		<script>
@@ -24,6 +27,11 @@ from the internet is getting really fucking annoying -->
 				$("#action_tile_container").hide();
 				// initially hide trade panel
 				$("#trade_panel").hide();
+				
+				// set console to auto-scroll
+				// vanilla JS
+				var textarea = document.getElementById('console');
+				textarea.scrollTop = textarea.scrollHeight;
 								
 				set_action_button_events();
 				
@@ -35,6 +43,7 @@ from the internet is getting really fucking annoying -->
 				Catan.generate_player_tiles();
 				Catan.generate_trade_panel();
 				Catan.generate_buy_buttons();
+				CatanBoard.generate_board();
 			});
 			
 			function set_trade_button_events() {
@@ -69,9 +78,8 @@ from the internet is getting really fucking annoying -->
 	</head>
 	<body>
 		<div id="templates" style="display: none;">
-			<div class="resource_container">
-				<img class="resource_logo" />
-				<span class="resource_count">0</span>
+			<div class="resource_container">0
+				<!--<span class="resource_count">0</span>-->
 			</div> <!-- end resource container -->
 			
 			<button class="buy_button">
@@ -102,6 +110,12 @@ from the internet is getting really fucking annoying -->
 				</span> <!-- end trade resource -->
 				<button class="less_trade_button trade_button">-1</button>
 			</div> <!-- end trade resource tile -->
+			
+			<div class="hex">
+				<div class="left"></div>
+				<div class="middle"></div>
+				<div class="right"></div>
+			</div>
 		</div> <!-- end templates -->
 	
 		<div id="container">
@@ -111,8 +125,7 @@ from the internet is getting really fucking annoying -->
 			
 			<div id="app_container">
 				<div id="board">
-					<!-- TODO board goes here -->
-					Board
+					<!--  auto-gen hexes go here -->
 				</div> <!-- end board -->				
 				<div id="player_tile_container">
 					<!-- auto-generated code here -->
@@ -128,7 +141,7 @@ from the internet is getting really fucking annoying -->
 						<button id="end_turn_button" class="action_button">End Turn</button>
 					</div> <!-- end action buttons -->
 					<div id="trade_panel">
-						<!-- TODO auto-generated shit goes here -->
+						<!-- auto-generated code goes here -->
 					</div>
 				</div> <!-- end action window --> 
 			</div> <!-- end app container -->
