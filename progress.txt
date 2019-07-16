@@ -21,22 +21,24 @@
 	- later roads can be built beside settlements or other roads (of same color)
 	- cannot override existing roads
 
-	- TODO charge for later roads
-
-	- DONE except for charging fee
-
 	- TODO longest road card not implemented
 
-6. Initial placement
+6. Development cards
+
+	- cannot play development cards (except VP cards)
+
+	- largest army card not implemented
+
+7. Initial placement
 	- DONE
 
-7. Robber
+8. Robber
 	- difficulty in dragging object - not sure Tkinter has explicit support for this
 
 	- TODO create sprite
 	- TODO allow card discarding
 
-8. GUI
+9. GUI
 	- create a "God" window which shows contents of each player's hand similar to what exists now
 		- this will allow me to monitor ebb and flow of resources
 
@@ -49,3 +51,5 @@
 	- game does not end on game over condition. message is displayed but play continues
 
 	- buttons should be greyed out when purchasing option is not available
+
+	- sometimes settlements are placed instead of roads

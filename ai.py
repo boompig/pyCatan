@@ -1,6 +1,5 @@
 import random
 from hex import Hex
-# from map_gen import MapGen
 from typing import Tuple, Dict, List, Optional
 from catan_types import Vertex, Edge
 
@@ -39,7 +38,7 @@ class AI():
         '''Return a random road stemming from settlement located at v.'''
 
         adjacent_v_set = self._board.get_adjacent_vertices(v)
-        random.shuffle(adjacent_v_set)
+        random.shuffle(list(adjacent_v_set))
 
         for v2 in adjacent_v_set:
             if not self._board.has_road(v, v2):

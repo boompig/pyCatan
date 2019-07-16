@@ -1,7 +1,8 @@
 import random
 from settlement import Settlement
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 from catan_types import Vertex, Edge
+from catan_gen import CatanConstants
 
 
 class Player():
@@ -13,11 +14,15 @@ class Player():
 		self._resources = {}  # type: Dict[str, int]
 		self._num_resources = 0
 
+		# this variable stores the *permanent* victory points
+		# this does not include temporary victory points such as special cards
 		self._vp = 0
+
 		self._settlements = []  # type: List[Settlement]
 		self._roads = []  # type: List[Edge]
 
 		self._dev_cards = {}  #type: Dict[str, int]
+		self._special_cards = set([])  # type: Set[str]
 
 	def get_num_resources(self) -> int:
 		'''Return the number of resources in the player's hand.'''
@@ -142,15 +147,24 @@ class Player():
 	def get_num_vp(self) -> int:
 		'''Return number of victory points this player has.'''
 
-		return self._vp
+		vp = self._vp
+		for card in self._special_cards:
+			vp += CatanConstants.special_card_points[card]
+		return vp
 
-	def add_development_card(self, dc: str) -> None:
-		'''Add given development card dc.'''
+	def add_special_card(self, card: str):
+		self._special_cards.add(card)
 
-		if dc not in self._dev_cards:
-			self._dev_cards[dc] = 0
+	def remove_special_card(self, card: str):
+		self._special_cards.remove(card)
 
-		self._dev_cards[dc] += 1
+	def add_development_card(self, card: str) -> None:
+		'''Add given development card.'''
+
+		self._dev_cards.setdefault(card, 0)
+		self._dev_cards[card] += 1
+		if card == "VP":
+			self._vp += 1
 
 	def get_development_cards(self):
 		'''Return development cards for this player.'''

@@ -1,4 +1,6 @@
-'''Generate a map of Catan'''
+'''
+This file maintains the state of the overall gameplay
+'''
 
 import random
 from collections import deque
@@ -9,6 +11,10 @@ from settlement import Settlement
 from ai import AI
 from typing import Dict, List, Set, Optional
 from catan_types import Vertex, Edge
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class SettlementPlacementException(Exception):
@@ -36,6 +42,12 @@ class MapGen():
         self._vertex_set = set([])  # type: Set[Vertex]
         self._road_set = set([])  # type: Set[Edge]
         self._resource_map = {}  # type: Dict[int, List[Hex]]
+
+        # where do the special cards reside?
+        self._longest_road_player = None  # type: Optional[Player]
+        self._largest_army_player = None  # type: Optional[Player]
+        self._longest_road_length = 0
+        self._largest_army_num_knights = 0
 
     def _make_dev_card_deck(self) -> None:
         '''Create a shuffled deck of development cards.'''
@@ -267,6 +279,12 @@ class MapGen():
 
         return self.get_player(color).has_road_to(v1) or self.get_player(color).has_road_to(v2)
 
+    def _normalize_road(self, v1: Vertex, v2: Vertex):
+        if v1[0] > v2[0]:
+            return (v2, v1)
+        else:
+            return (v1, v2)
+
     def add_road(self, v1: Vertex, v2: Vertex, color: str, ignore_cost: bool = False) -> bool:
         '''Add a road of the given color to the map. Charge the player for it.
         Rules:
@@ -275,26 +293,64 @@ class MapGen():
         - at least one of (v1, v2) must connect to a same color road
         Road spans between v1 and v2.'''
 
-        if v1[0] > v2[0]:
-            v1, v2 = v2, v1
+        v1, v2 = self._normalize_road(v1, v2)
 
         p = self.get_player(color)
         cost = CatanConstants.building_costs["road"]
 
         # first condition only applies to first 2 roads
-        if self._has_road(v1, v2) or \
-        not (self._road_connects_same_color_settlement(v1, v2, color) or \
-        (self._road_connects_same_color_road(v1, v2, color) and \
-        p.get_num_roads() >= 2)):
+        if (self._has_road(v1, v2) or
+            not (self._road_connects_same_color_settlement(v1, v2, color) or
+                 (self._road_connects_same_color_road(v1, v2, color) and
+                  p.get_num_roads() >= 2))):
             return False
-        elif p.get_num_roads() >=2 and not p.can_deduct_resources(cost):
+        elif p.get_num_roads() >= 2 and not p.can_deduct_resources(cost):
             return False
         else:
             self._roads.add((v1, v2))
             if p.get_num_roads() >= 2:
                 p.deduct_resources(cost)
             p.add_road(v1, v2)
+            # now figure out whether this makes this road the longest road
+
+            road_length = self._get_road_length(v1, color)
+            logger.debug(f"{color}'s new road has length {road_length}")
+            if ((self._longest_road_player is None and road_length >= 5) or
+                    (road_length > self._longest_road_length)):
+                if self._longest_road_player:
+                    self._longest_road_player.remove_special_card("longest road")
+                    if self._longest_road_player != p:
+                        logger.info(f"{self._longest_road_player} lost longest road card")
+                p.add_special_card("longest road")
+                logger.info(f"{color} now has longest road with a road length of {road_length}")
+                self._longest_road_length = road_length
+                self._longest_road_player = p
+                logger.info(f"{p} now has longest road card")
             return True
+
+    def _get_road_length(self, starting_vertex: Vertex, color: str, visited: Optional[Set[Vertex]] = None) -> int:
+        '''Get the longest portion of this road starting from the given vertex'''
+        if visited is None:
+            visited = set([])
+        lengths = []
+        # first, find all the adjacent vertices
+        player = self.get_player(color)
+        visited2 = visited.copy()
+        visited2.add(starting_vertex)
+        for v2 in self.get_adjacent_vertices(starting_vertex):
+            if v2 in visited:
+                continue
+            if player.has_road_to(v2):
+                lengths.append(1 + self._get_road_length(v2, color, visited2))
+
+        # highest lengths first
+        lengths.sort(reverse=True)
+        if lengths == []:
+            return 0
+        elif len(lengths) == 1:
+            return lengths[0]
+        else:
+            return lengths[0] + lengths[1]
 
     def has_road(self, v1: Vertex, v2: Vertex) -> bool:
         '''Return true iff a road from v1 to v2 has already been built.
@@ -341,7 +397,7 @@ class MapGen():
 
         s = set([])
 
-        for v in self.get_robber_hex.get_vertices():
+        for v in self.get_robber_hex().get_vertices():
             if v in self._settlements:
                 s.add(self._settlements[v].color())
 
@@ -433,10 +489,10 @@ class MapGen():
 
         return d
 
-    def get_adjacent_vertices(self, v: Vertex) -> List[Vertex]:
+    def get_adjacent_vertices(self, v: Vertex) -> Set[Vertex]:
         '''Return all vertices adjacent to vertex v.'''
 
-        adjacent_v = []
+        adjacent_v = set([])
 
         # first, get tiles that v1 is a member of
         adjacent_hexes = self._vertex_map[v]
@@ -445,8 +501,8 @@ class MapGen():
         for hex in adjacent_hexes:
             v_set = hex.get_vertices()
             v_i = v_set.index(v) # we know that this exists
-            # on each tile, eadjacent vertices are +1 and -1 index away
-            adjacent_v.extend([v_set[v_i - 1], v_set[(v_i + 1) % len(v_set)]])
+            # on each tile, adjacent vertices are +1 and -1 index away
+            adjacent_v.update([v_set[v_i - 1], v_set[(v_i + 1) % len(v_set)]])
 
         return adjacent_v
 
@@ -473,7 +529,7 @@ class MapGen():
 
         return d
 
-    def _get_hex_at_Vertexs(self, row: int, col: int) -> Hex:
+    def _get_hex_at_coords(self, row: int, col: int) -> Hex:
         '''Return hex object at the given coordinates.'''
 
         return self._board[row][col]
@@ -482,7 +538,7 @@ class MapGen():
         '''Return the hex with the robber on it.'''
 
         #return self._robber_hex
-        return self._get_hex_at_Vertexs(*self._robber_hex)
+        return self._get_hex_at_coords(*self._robber_hex)
 
     def set_robber_hex(self, row: int, col: int) -> bool:
         '''Set the position of the robber.

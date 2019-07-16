@@ -4,7 +4,7 @@
 #############################
 
 '''
-This file is improperly named - it is mainly concerned with:
+This file is is mainly concerned with:
 	- the 'view' aspect (i.e. representation of board on screen)
 	- the 'control' aspect (i.e. responding to user-caused events such as button clicks)
 
@@ -17,10 +17,11 @@ TODO break up the view and control portions
 
 from tkinter import RIGHT, DISABLED, W, HIDDEN, NORMAL, Tk, Frame, Button, StringVar, S, Label, Canvas
 from catan_gen import CatanConstants, CatanRenderConstants
-from map_gen import MapGen, DevelopmentCardError
+from game_engine import MapGen, DevelopmentCardError
 from utils import CatanUtils
 import random
 import math
+import logging
 
 
 class GamePhases():
@@ -408,17 +409,17 @@ class CatanApp():
 	def play_dev_card(self):
 		print("Playing dev card...")
 
-	def buy_dev_card(self):
+	def buy_development_card(self):
 		'''User-triggered action to buy a development card.'''
 
 		color = self.players[self._turn]
-
 		try:
 			card = self._map.get_development_card(color)
 			self.post_status_note("Successfully bought development card")
 			self.update_hand(color)
 			print("{} bought development card '{}'".format(color, card))
 			self.update_dev_cards(color)
+			self.update_vp(color)
 		except DevelopmentCardError as e:
 			self.post_status_note(str(e), True)
 
@@ -434,7 +435,7 @@ class CatanApp():
 			self._frame,
 			text="Buy development card",
 			state=DISABLED,
-			command=self.buy_dev_card
+			command=self.buy_development_card
 		)
 
 		self._build_buttons["dev_card"].pack()
@@ -741,7 +742,8 @@ class CatanApp():
 			#self._canvas.itemconfigure(b, outline="black")
 
 	def draw_status_area(self):
-		'''Draw whose turn it is in top-left corner.'''
+		'''Draw whose turn it is in top-left corner.
+		Also draw player hands'''
 
 		self.draw_build_menu()
 
@@ -766,16 +768,17 @@ class CatanApp():
 		item = self._canvas.find_withtag("player_hand_rect_%s_text" % color)
 		self._canvas.itemconfigure(item, text=str(self._map.get_player_vp(color)))
 
-	def draw_hand_area_section(self, c, i):
-		f = lambda event : self.steal_from_player(c)
-		t = "player_hand_rect_%s" % c
+	def draw_hand_area_section(self, color: str, i: int):
+		'''Draw the section of the hand area for player of given color'''
+		f = lambda event : self.steal_from_player(color)
+		t = "player_hand_rect_%s" % color
 
 		self._canvas.create_rectangle(
 			550,
 			120 * (i + 1) - 20,
 			580,
 			120 * (i + 1) + 10,
-			fill=c,
+			fill=color,
 			outline="black",
 			tag=("player_hand_rect", t, "hand_area_section"),
 			state=DISABLED,
@@ -791,7 +794,7 @@ class CatanApp():
 			fill="white"
 		)
 
-		self._hands[c] = self._canvas.create_text(
+		self._hands[color] = self._canvas.create_text(
 			670,
 			120 * (i + 1),
 			text="",
@@ -807,7 +810,7 @@ class CatanApp():
 			text="NO  DEV CARDS",
 			width = 150,
 			justify=RIGHT,
-			tag="dev_area_section_%s" % c
+			tag="dev_area_section_%s" % color
 		)
 
 		# create a box around the whole thing
@@ -817,7 +820,7 @@ class CatanApp():
 			850,
 			120 * (i + 1) + 50,
 			fill="",
-			outline=c,
+			outline=color,
 			tag="hand_area_section",
 			width=1.5
 		)
@@ -828,8 +831,8 @@ class CatanApp():
 		self._hands = {}
 
 		# this is where the cards are
-		for i, c in enumerate(self.players):
-			self.draw_hand_area_section(c, i)
+		for i, color in enumerate(self.players):
+			self.draw_hand_area_section(color, i)
 
 		# and a box around everything
 		self._canvas.create_rectangle(
@@ -860,7 +863,7 @@ class CatanApp():
 		self._canvas.itemconfigure(self._status_rect, fill=self.players[self._turn])
 
 	def draw_board(self, canvas):
-		'''Now we draw the board...'''
+		'''Draw the catan board'''
 
 		for row_i, row in enumerate(self._map.get_map()):
 			for col, hex in enumerate(row):
@@ -960,6 +963,7 @@ class CatanApp():
 					self.change_to_state("second settlement placement")
 			else:
 				self.change_to_state("gameplay")
+			self.update_vp(color)
 		else:
 			msg = "Road must be attached to a settlement."
 			print("Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg)
@@ -1107,8 +1111,5 @@ def render_map():
 
 
 if __name__ == "__main__":
+	logging.basicConfig(level=logging.DEBUG)
 	render_map()
-	pass
-
-
-

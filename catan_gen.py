@@ -110,6 +110,11 @@ def flatten_list(l: List[List[str]]) -> List[str]:
 class CatanConstants():
 	'''Keep constants under one namespace.'''
 
+	special_card_points = {
+		"longest road": 2,
+		"largest army": 2
+	}
+
 	development_cards = {
 		"soldier" : 4,
 		"VP" : 5,
