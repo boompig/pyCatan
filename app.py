@@ -8,8 +8,9 @@ Consider using images and sprites
 #################
 
 from tkinter import *
-from utils import *
+from utils import CatanUtils
 import random
+
 
 class DiceDrawer():
 	dot_radius = 9
@@ -21,7 +22,7 @@ class DiceDrawer():
 	def draw_die(self, canvas, number, color):
 		self._coords = self.get_cube_coords(0, 0, DiceDrawer.dice_length)
 
-		tkint = to_tkinter_coords(self._coords, App.height, self._offset)
+		tkint = CatanUtils.get_tkinter_coords(self._coords, App.height, self._offset)
 		corners = (tkint[0], tkint[1], tkint[-2], tkint[-1])
 
 		# create a rectangle
@@ -89,7 +90,7 @@ class DiceDrawer():
 			circle_color = "white"
 
 		canvas.create_oval (
-			*to_tkinter_coords(
+			*CatanUtils.get_tkinter_coords(
 				((x - DiceDrawer.dot_radius, y - DiceDrawer.dot_radius), (x + DiceDrawer.dot_radius, y + DiceDrawer.dot_radius)),
 				App.height,
 				self._offset
@@ -171,17 +172,17 @@ class App():
 
 	def draw_robber(self, lower, middle, top):
 		self._canvas.create_oval(
-			*to_tkinter_coords(lower, App.height, self._offset),
+			*CatanUtils.get_tkinter_coords(lower, App.height, self._offset),
 			fill="black"
 		)
 
 		self._canvas.create_oval(
-			*to_tkinter_coords(middle, App.height, self._offset),
+			*CatanUtils.get_tkinter_coords(middle, App.height, self._offset),
 			fill="black"
 		)
 
 		self._canvas.create_oval(
-			*to_tkinter_coords(top, App.height, self._offset),
+			*CatanUtils.get_tkinter_coords(top, App.height, self._offset),
 			fill="black"
 		)
 

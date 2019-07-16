@@ -3,11 +3,10 @@
 #	December 25, 2012		#
 #############################
 
-#################
-#	IMPORTS		#
-#################
 from catan_gen import CatanConstants
 from utils import CatanUtils
+from typing import Optional, Tuple
+
 
 class Hex():
 	'''
@@ -15,40 +14,40 @@ class Hex():
 	Add methods as needed.
 	'''
 
-	def __init__(self, resource):
+	def __init__(self, resource: str) -> None:
 		self._r = resource
 		self._t = None
 		self._n = None
 		self._v = []
 
-	def get_resource(self):
+	def get_resource(self) -> str:
 		return self._r
 
-	def set_vertices(self, vertices):
+	def set_vertices(self, vertices: Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]) -> None:
 		self._v = vertices
 
-	def get_vertices(self):
+	def get_vertices(self) -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]:
 		return self._v
 
-	def set_token(self, t):
+	def set_token(self, t: str) -> None:
 		self._t = t
 		self._n = CatanConstants.token_map[self._t]
-		
-	def get_number(self):
+
+	def get_number(self) -> Optional[int]:
 		return self._n
 
 	def get_token(self):
 		'''Return the token letter associated with this hex.
 		If it is a desert hex, return the string "DESERT"'''
-		
+
 		if self._t is None:
 			return "DESERT"
 		else:
 			return self._t
-		
-	def get_num_dots(self):
+
+	def get_num_dots(self) -> int:
 		'''Return the number of dots on the token for this hex.'''
-		
+
 		if self._n is None:
 			return 0
 		else:
@@ -62,25 +61,25 @@ class Hex():
 				return self._v[0]
 			elif index == "right":
 				return self._v[3]
-			
-	def get_center(self):
+
+	def get_center(self) -> Tuple[float, float]:
 		'''Return the center of this tile.'''
-		
+
 		return (
 			(self.get_left() + self.get_right()) / 2,
 			(self.get_top() + self.get_bottom()) / 2,
 		)
-			
-	def get_top(self):
+
+	def get_top(self) -> int:
 		return self._v[1][1]
 
-	def get_bottom(self):
+	def get_bottom(self) -> int:
 		return self._v[-1][1]
 
-	def get_left(self):
+	def get_left(self) -> int:
 		return self._v[0][0]
 
-	def get_right(self):
+	def get_right(self) -> int:
 		return self._v[3][0]
 
 def print_bar():

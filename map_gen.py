@@ -1,20 +1,17 @@
 '''Generate a map of Catan'''
 
-#################
-#    IMPORTS    #
-#################
 import random
 from collections import deque
 from catan_gen import CatanConstants
 from hex import Hex
-from utils import CatanUtils
 from player import Player
 from settlement import Settlement
 from ai import AI
-#from gen_board import CatanApp
+
 
 class SettlementPlacementException(Exception):
     pass
+
 
 class MapGen():
     '''Engine for generating Catan maps.'''

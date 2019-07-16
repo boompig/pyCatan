@@ -15,13 +15,10 @@ TODO break up the view and control portions
 #	IMPORTS	#
 #############
 
-from tkinter import *
+from tkinter import RIGHT, DISABLED, W, HIDDEN, NORMAL, Tk, Frame, Button, StringVar, S, Label, Canvas
 from catan_gen import CatanConstants, CatanRenderConstants
-from sys import exit as sys_exit
-from hex import Hex
 from map_gen import MapGen
 from utils import CatanUtils
-from render import *
 import random
 import math
 
@@ -300,8 +297,6 @@ class CatanApp():
 	def automate_robber_movement(self):
 		'''Choose a place to put the robber.'''
 
-		good_placement = False
-
 		color = self.players[self._turn]
 		row, col = self._map.ai.get_smart_robber_placement(color)
 		#destination_hex_sprite = self._canvas.find_withtag("hex_{}_{}".format(row, col))
@@ -318,7 +313,6 @@ class CatanApp():
 
 		# do all 8
 		for i in range(8):
-			c = self.players[self._turn]
 			v = self._map.ai.get_best_settlement()
 			self.add_settlement(None, v)
 			road = self._map.ai.get_random_road_from_settlement(v)
@@ -518,7 +512,7 @@ class CatanApp():
 			#		self.post_status_note("{} must discard {} cards".format(c.title(), discard_map[c]), True)
 		else:
 			# compute produced resources
-			d = self._map.get_resources_produced(n)
+			self._map.get_resources_produced(n)
 
 			# update player hands on screen
 			for c in self.players:
@@ -706,7 +700,7 @@ class CatanApp():
 		for i in range(len(build_list)):
 			l = Label(self._canvas, text=build_list[i], anchor=W, font=("Helvetica", 16))
 
-			w = self._canvas.create_window(
+			self._canvas.create_window(
 				x,
 				y_start + i * y_incr,
 				window=l,
@@ -876,10 +870,10 @@ class CatanApp():
 		if v1[0] > v2[0]:
 			v1, v2 = v2, v1
 
-		spacing = 10
+		# spacing = 10
 		slope = self._get_road_slope(v1, v2)
-		x_offsets = [10, v2[0] - v1[0] - 10] # 10 from left and 10 from right
-		y_offsets = [self._get_y_offset(v1, v2, dx) for dx in x_offsets]
+		# x_offsets = [10, v2[0] - v1[0] - 10] # 10 from left and 10 from right
+		# y_offsets = [self._get_y_offset(v1, v2, dx) for dx in x_offsets]
 
 		if slope == 0:
 			# have a horizontal offset but no vertical offset
@@ -1087,6 +1081,7 @@ def render_map():
 
 	app = CatanApp()
 	app.run()
+
 
 if __name__ == "__main__":
 	render_map()

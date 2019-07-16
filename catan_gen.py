@@ -100,7 +100,10 @@ d) Be able to add robber
 '''
 
 
-def flatten_list(l):
+from typing import List
+
+
+def flatten_list(l: List[List[str]]) -> List[str]:
 	return [item for sublist in l for item in sublist]
 
 
@@ -173,7 +176,7 @@ class CatanConstants():
 	'''Same order every time - [2][0], [1][0], [0][0], [1][-1], [2][-1] ... '''
 
 	@staticmethod
-	def get_resource_distribution_pool():
+	def get_resource_distribution_pool() -> List[str]:
 		'''Return list of strings, where each string is a tile.'''
 
 		l_start = [[k] * v for k, v in CatanConstants.resource_distribution.items()]
