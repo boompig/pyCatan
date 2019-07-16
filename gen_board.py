@@ -17,7 +17,7 @@ TODO break up the view and control portions
 
 from tkinter import RIGHT, DISABLED, W, HIDDEN, NORMAL, Tk, Frame, Button, StringVar, S, Label, Canvas
 from catan_gen import CatanConstants, CatanRenderConstants
-from map_gen import MapGen
+from map_gen import MapGen, DevelopmentCardError
 from utils import CatanUtils
 import random
 import math
@@ -411,15 +411,15 @@ class CatanApp():
 		'''User-triggered action to buy a development card.'''
 
 		color = self.players[self._turn]
-		card = self._map.get_development_card(color)
 
-		if card is None:
-			self.post_status_note("You cannot afford to buy a development card", True)
-		else:
+		try:
+			card = self._map.get_development_card(color)
 			self.post_status_note("Successfully bought development card")
 			self.update_hand(color)
 			print("{} bought development card '{}'".format(color, card))
 			self.update_dev_cards(color)
+		except DevelopmentCardError as e:
+			self.post_status_note(str(e), True)
 
 	def create_build_buttons(self):
 		'''Create buttons to build various structures.'''

@@ -44,8 +44,6 @@
 		- this will allow me to select resources to discard
 		- I could draw a mock-up of this...
 
-	- GUI "cannot afford development card" error appears when you run out of development cards
-
 	- generate player names - naming them for colours is not great
 
 	- game over conditions not detected

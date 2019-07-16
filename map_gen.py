@@ -7,10 +7,14 @@ from hex import Hex
 from player import Player
 from settlement import Settlement
 from ai import AI
-
-
 from typing import Dict, List, Optional, Set, Tuple
+
+
 class SettlementPlacementException(Exception):
+    pass
+
+
+class DevelopmentCardError(Exception):
     pass
 
 
@@ -62,7 +66,7 @@ class MapGen():
         p = self.get_player(color)
         return p.get_num_vp()
 
-    def get_development_card(self, color: str) -> Optional[str]:
+    def get_development_card(self, color: str) -> str:
         '''Give out a development card to the player if they can afford it.
         Return the development card, or None if none given.'''
 
@@ -74,8 +78,10 @@ class MapGen():
             card = self._dev_card_deck.pop()
             p.add_development_card(card)
             return card
+        elif len(self._dev_card_deck) == 0:
+            raise DevelopmentCardError(f"There are no more development cards left");
         else:
-            return None
+            raise DevelopmentCardError(f"Player {color} cannot afford to buy a development card");
 
     def create_players(self, colors: List[str]) -> None:
         '''Create brand new players. For now, they are just placeholders.'''
