@@ -57,7 +57,6 @@ class App():
             self._canvas = c
 
     def draw_down_arrow(self, x_offset, y_offset):
-
         self._canvas.create_polygon(
             *CatanUtils.get_tkinter_coords(self.get_down_arrow_coords()),
             fill="red",
@@ -74,7 +73,6 @@ class App():
                 (5, 20))
 
     def create_game_window(self):
-
         roll_button = Button(self._game_window, text="Roll", command=self.roll)
         roll_button.pack()
 
@@ -83,7 +81,6 @@ class App():
         roll_label.pack()
 
     def create_god_window(self):
-
         self._god_canvas = Canvas(self._god_window, width=App.width, height=App.height)
         self._god_canvas.pack()
 
@@ -104,7 +101,6 @@ class App():
 
     def create_players(self):
         self._players = {}
-
         for c in self.colors:
             self._players[c] = Player()
 
@@ -193,6 +189,7 @@ class App():
                 tag="god_hand_count_{}_{}".format(color, resource),
                 font=("Helvetica", 14)
             )
+
 
 if __name__ == "__main__":
     root = Tk()
