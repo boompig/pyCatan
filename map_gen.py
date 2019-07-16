@@ -9,6 +9,7 @@ from settlement import Settlement
 from ai import AI
 
 
+from typing import Dict, List, Optional, Set, Tuple
 class SettlementPlacementException(Exception):
     pass
 
@@ -16,12 +17,12 @@ class SettlementPlacementException(Exception):
 class MapGen():
     '''Engine for generating Catan maps.'''
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._decr_set = set([1, 2, 4, 6])
         self._players = {}
         self.ai = AI(self)
 
-    def _make_dev_card_deck(self):
+    def _make_dev_card_deck(self) -> None:
         '''Create a shuffled deck of development cards.'''
 
         self._dev_card_deck = []
@@ -31,7 +32,7 @@ class MapGen():
 
         random.shuffle(self._dev_card_deck)
 
-    def gen(self):
+    def gen(self) -> None:
         # this is a mapping of rows to hexes...
         self._board = []
 
@@ -55,13 +56,13 @@ class MapGen():
 
         pass
 
-    def get_player_vp(self, color):
+    def get_player_vp(self, color: str) -> int:
         '''Return number of victory points for player of given color.'''
 
         p = self.get_player(color)
         return p.get_num_vp()
 
-    def get_development_card(self, color):
+    def get_development_card(self, color: str) -> Optional[str]:
         '''Give out a development card to the player if they can afford it.
         Return the development card, or None if none given.'''
 
@@ -76,18 +77,18 @@ class MapGen():
         else:
             return None
 
-    def create_players(self, colors):
+    def create_players(self, colors: List[str]) -> None:
         '''Create brand new players. For now, they are just placeholders.'''
 
         for c in colors:
             self._players[c] = Player()
 
-    def get_player(self, color):
+    def get_player(self, color: str) -> Player:
         '''Return the player with the given color.'''
 
         return self._players[color]
 
-    def _assign_tokens(self):
+    def _assign_tokens(self) -> None:
         '''Assign tokens to the tiles on the board.'''
 
         # a reversed list of letters (so pop operation works)
@@ -119,7 +120,7 @@ class MapGen():
                 row, col = self._get_next_tile(row, col, unplaced_layout)
 
 
-    def _get_next_tile(self, row, col, unplaced_layout):
+    def _get_next_tile(self, row: int, col: int, unplaced_layout: Dict[int, int]) -> Tuple[int, int]:
         '''Calculate next tile position from this tile position when placing tokens.'''
 
         if row == 4 and col == 0:
@@ -160,7 +161,7 @@ class MapGen():
 
         return (row, col)
 
-    def _place_tiles(self, deck):
+    def _place_tiles(self, deck: List[str]) -> None:
         '''Place tiles on the board.'''
 
         for row_num, num_cols in enumerate(CatanConstants.tile_layout):
@@ -170,7 +171,7 @@ class MapGen():
             for col in range(num_cols):
                 row.append(Hex(deck.pop()))
 
-    def _make_deck(self):
+    def _make_deck(self) -> List[str]:
         '''Return a shuffled deck of unplaced resources.'''
 
         deck = CatanConstants.get_resource_distribution_pool()
@@ -190,7 +191,7 @@ class MapGen():
             elif len(row) == 1:
                 print((2 * " ") + f(row[0]) + (2 * " "))
 
-    def prepare(self):
+    def prepare(self) -> None:
         '''Create optimized data structures for easy access to some common game data.'''
 
         # TODO
@@ -213,7 +214,7 @@ class MapGen():
 
         self.ai.prepare()
 
-    def _find_desert_hex(self):
+    def _find_desert_hex(self) -> None:
         '''Find the desert hex and set self._desert_pos to its position in the form (row, col).'''
 
         for row_i, row in enumerate(self._board):
@@ -222,7 +223,7 @@ class MapGen():
                     self._desert_pos = (row_i, col)
                     return
 
-    def cull_bad_settlement_vertices(self, v):
+    def cull_bad_settlement_vertices(self, v: Tuple[int, int]) -> None:
         '''Given that a settlement was built on vertex v, remove adjacent vertices from the
         set of viable building nodes for settlements. Also remove that vertex.'''
 
@@ -230,26 +231,26 @@ class MapGen():
         self.available_settlement_set.difference_update(adjacent_v_set)
         self.available_settlement_set.discard(v)
 
-    def get_nodes(self):
+    def get_nodes(self) -> Set[Tuple[int, int]]:
         return self._vertex_set
 
-    def _has_road(self, v1, v2):
+    def _has_road(self, v1: Tuple[int, int], v2: Tuple[int, int]) -> bool:
         '''True iff the road from v1 to v2 has been built.'''
 
         return (v1, v2) in self._roads
 
-    def _road_connects_same_color_settlement(self, v1, v2, color):
+    def _road_connects_same_color_settlement(self, v1: Tuple[int, int], v2: Tuple[int, int], color: str) -> bool:
         '''True iff this road connects to a settlement of the same color.'''
 
         return (v1 in self._settlements and self._settlements[v1].color() == color) or \
             (v2 in self._settlements and self._settlements[v2].color() == color)
 
-    def _road_connects_same_color_road(self, v1, v2, color):
+    def _road_connects_same_color_road(self, v1: Tuple[int, int], v2: Tuple[int, int], color: str) -> bool:
         '''True iff this road connects to another road of the same color.'''
 
         return self.get_player(color).has_road_to(v1) or self.get_player(color).has_road_to(v2)
 
-    def add_road(self, v1, v2, color, ignore_cost=False):
+    def add_road(self, v1: Tuple[int, int], v2: Tuple[int, int], color: str, ignore_cost: bool = False) -> bool:
         '''Add a road of the given color to the map. Charge the player for it.
         Rules:
         - (v1, v2) is not an existing road
@@ -278,7 +279,7 @@ class MapGen():
             p.add_road(v1, v2)
             return True
 
-    def has_road(self, v1, v2):
+    def has_road(self, v1: Tuple[int, int], v2: Tuple[int, int]) -> bool:
         '''Return true iff a road from v1 to v2 has already been built.
         Also allows for a road from v2 to v1'''
 
@@ -287,7 +288,7 @@ class MapGen():
 
         return (v1, v2) in self._roads
 
-    def add_settlement(self, v, color):
+    def add_settlement(self, v: Tuple[int, int], color: str) -> bool:
         '''Add a settlement of the given color to the map.
         Deduct the cost if building is in a valid place.
         Return False if cannot afford or cannot build.'''
@@ -330,7 +331,7 @@ class MapGen():
         return list(s)
 
 
-    def add_city(self, v, color):
+    def add_city(self, v: Tuple[int, int], color: str) -> bool:
         '''Add a city of the given color to the map.
         Upgrades existing settlement.
         Deduct the cost if building is in a valid place.
@@ -351,13 +352,13 @@ class MapGen():
             p.update_city()
             return True
 
-    def _create_vertex_set(self):
+    def _create_vertex_set(self) -> None:
         '''Create a set of all vertices (nodes) on the map.
         Used in settlement placement.'''
 
         self._vertex_set = set(self._vertex_map.keys())
 
-    def _create_vertex_map(self):
+    def _create_vertex_map(self) -> None:
         ''' vertex_map maps coordinates to list of hexes
         Used to quickly determine adjacency when settlement is placed. '''
 
@@ -370,7 +371,7 @@ class MapGen():
                         self._vertex_map[v] = []
                     self._vertex_map[v].append(hex)
 
-    def produce(self, s, ignore_robber=False):
+    def produce(self, s: Settlement, ignore_robber: bool = False) -> List[str]:
         '''Make the settlement s produce resources.
         Hex with the robber does not produce unless explicitly told (ignore_robber=True).
         Return a list of the resources produced.'''
@@ -385,7 +386,7 @@ class MapGen():
         self._players[s.color()].add_resources(l)
         return l
 
-    def get_resources_produced(self, roll):
+    def get_resources_produced(self, roll: int) -> Dict[str, List[str]]:
         '''For the given roll, return a map of player color to resources produced.'''
 
         d = {}
@@ -415,7 +416,7 @@ class MapGen():
 
         return d
 
-    def get_adjacent_vertices(self, v):
+    def get_adjacent_vertices(self, v: Tuple[int, int]) -> List[Tuple[int, int]]:
         '''Return all vertices adjacent to vertex v.'''
 
         adjacent_v = []
@@ -432,7 +433,7 @@ class MapGen():
 
         return adjacent_v
 
-    def _create_road_set(self):
+    def _create_road_set(self) -> None:
         '''Compile a set of tuples, each of which is a valid road.'''
 
         self._road_set = set([])
@@ -441,7 +442,7 @@ class MapGen():
             v_road_set = set([(v, v2) for v2 in self.get_adjacent_vertices(v)])
             self._road_set.update(v_road_set)
 
-    def get_roads(self):
+    def get_roads(self) -> Set[Tuple[Tuple[int, int], Tuple[int, int]]]:
         return self._road_set
 
     def robber_discard(self):
@@ -455,18 +456,18 @@ class MapGen():
 
         return d
 
-    def _get_hex_at_coords(self, row, col):
+    def _get_hex_at_coords(self, row: int, col: int) -> Hex:
         '''Return hex object at the given coordinates.'''
 
         return self._board[row][col]
 
-    def get_robber_hex(self):
+    def get_robber_hex(self) -> Hex:
         '''Return the hex with the robber on it.'''
 
         #return self._robber_hex
         return self._get_hex_at_coords(*self._robber_hex)
 
-    def set_robber_hex(self, row, col):
+    def set_robber_hex(self, row: int, col: int) -> bool:
         '''Set the position of the robber.
         Cannot be same as old position.
         Return True iff robber was properly set.'''
@@ -479,7 +480,7 @@ class MapGen():
             return True
             #self._board[row][col]
 
-    def robber_steal(self, from_player, to_player):
+    def robber_steal(self, from_player: str, to_player: str) -> str:
         '''Robber steals from from_player and gives to to_player.
         Return the resource that was stolen.
         If from_player has no cards, return None.'''
@@ -491,7 +492,7 @@ class MapGen():
 
         return r
 
-    def _create_resource_map(self):
+    def _create_resource_map(self) -> None:
         ''' resource_map maps numbers to list of hexes
         Used in resource distribution when dice are rolled.'''
 
@@ -509,10 +510,10 @@ class MapGen():
 
 #        CatanUtils.print_dict(self._resource_map)
 
-    def get_map(self):
+    def get_map(self) -> List[List[Hex]]:
         return self._board
 
-    def draw(self):
+    def draw(self) -> None:
         '''Render the board.'''
 
         pass

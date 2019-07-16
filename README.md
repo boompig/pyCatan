@@ -13,3 +13,9 @@ python gen_board.py
 ## Game Features
 
 The game is incomplete! To get specifics on what is implemented and what is not, see `progress.txt`.
+
+## Keyboard Bindings
+
+- escape - ends turn
+- return - ends turn
+- space - ends turn

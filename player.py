@@ -1,10 +1,12 @@
 import random
+from settlement import Settlement
+from typing import List, Tuple
 
 
 class Player():
 	'''Single-player player.'''
 
-	def __init__(self):
+	def __init__(self) -> None:
 		'''Create a new Catan player.'''
 
 		self._resources = {}
@@ -19,12 +21,12 @@ class Player():
 		# TODO here have stash of settlements, cities, roads that are unbuilt
 		# TODO here have
 
-	def get_num_resources(self):
+	def get_num_resources(self) -> int:
 		'''Return the number of resources in the player's hand.'''
 
 		return self._num_resources
 
-	def can_deduct_resources(self, r_list):
+	def can_deduct_resources(self, r_list: List[str]) -> bool:
 		'''Return True iff can deduct all resources in r_list from this player.'''
 
 		for r in set(r_list):
@@ -33,7 +35,7 @@ class Player():
 				return False
 		return True
 
-	def deduct_resources(self, r_list):
+	def deduct_resources(self, r_list: List[str]) -> bool:
 		'''Deduct the given resources from the player. If not possible, return False.'''
 
 		if not self.can_deduct_resources(r_list):
@@ -49,34 +51,34 @@ class Player():
 			#	del(self._resources[r])
 		return True
 
-	def add_settlement(self, s):
+	def add_settlement(self, s: Settlement) -> None:
 		'''Add the given settlement to the list of settlements for this player.'''
 
 		self._settlements.append(s)
 		self._vp += 1
 
-	def update_city(self):
+	def update_city(self) -> None:
 		'''Update a city of this player.
 		Used to update VP count.'''
 
 		self._vp += 1
 
-	def add_road(self, v1, v2):
+	def add_road(self, v1: Tuple[int, int], v2: Tuple[int, int]) -> None:
 		'''Add a road.'''
 
 		self._roads.append((v1, v2))
 
-	def get_num_roads(self):
+	def get_num_roads(self) -> int:
 		'''Return number of roads built by this player.'''
 
 		return len(self._roads)
 
-	def get_num_settlements(self):
+	def get_num_settlements(self) -> int:
 		'''Return the number of settlements this player has built.'''
 
 		return len(self._settlements)
 
-	def get_settlement(self, i):
+	def get_settlement(self, i: int) -> Settlement:
 		'''Return settlement at the given index.'''
 
 		if i >= len(self._settlements):
@@ -84,7 +86,7 @@ class Player():
 		else:
 			return self._settlements[i]
 
-	def add_resources(self, resource_list):
+	def add_resources(self, resource_list: List[str]) -> None:
 		'''Collect resources.'''
 
 		for r in resource_list:
@@ -95,7 +97,7 @@ class Player():
 
 		#self._resources.extend(resource_list)
 
-	def get_printable_hand(self):
+	def get_printable_hand(self) -> str:
 		'''Return resources in the player's hand.'''
 
 		s = ""
@@ -105,7 +107,7 @@ class Player():
 
 		return s[:-2]
 
-	def get_printable_dev_cards(self):
+	def get_printable_dev_cards(self) -> str:
 		'''Return development cards in the player's hand.'''
 
 		s = ""
@@ -115,7 +117,7 @@ class Player():
 
 		return s[:-2]
 
-	def steal_resource(self):
+	def steal_resource(self) -> str:
 		'''Return (discard) random resource.
 		If the player has no resources, return None.'''
 
@@ -141,12 +143,12 @@ class Player():
 
 		pass
 
-	def get_num_vp(self):
+	def get_num_vp(self) -> int:
 		'''Return number of victory points this player has.'''
 
 		return self._vp
 
-	def add_development_card(self, dc):
+	def add_development_card(self, dc: str) -> None:
 		'''Add given development card dc.'''
 
 		if dc not in self._dev_cards:
@@ -164,7 +166,7 @@ class Player():
 
 		return self._resources
 
-	def has_road_to(self, v):
+	def has_road_to(self, v: Tuple[int, int]) -> bool:
 		'''Return True iff this player has a road leading to vertex v.'''
 
 		for road in self._roads:
