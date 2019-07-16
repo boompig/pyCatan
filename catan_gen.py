@@ -179,6 +179,7 @@ class CatanConstants():
 		l_start = [[k] * v for k, v in CatanConstants.resource_distribution.items()]
 		return flatten_list(l_start)
 
+
 class CatanRenderConstants():
 	resource_color_map = {
 		"brick" : "firebrick",
