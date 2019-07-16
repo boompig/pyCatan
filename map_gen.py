@@ -7,7 +7,7 @@ from hex import Hex
 from player import Player
 from settlement import Settlement
 from ai import AI
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 
 class SettlementPlacementException(Exception):

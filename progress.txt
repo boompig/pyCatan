@@ -46,4 +46,6 @@
 
 	- generate player names - naming them for colours is not great
 
-	- game over conditions not detected
+	- game does not end on game over condition. message is displayed but play continues
+
+	- buttons should be greyed out when purchasing option is not available

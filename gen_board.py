@@ -482,8 +482,33 @@ class CatanApp():
 
 		self._build_buttons[type].pack()
 
+	def check_game_end(self) -> bool:
+		for color in self.players:
+			vp = self._map.get_player_vp(color)
+			if vp >= 10:
+				return True
+		return False
+
+	def process_game_end(self):
+		# get the winner
+		# winning_player = None
+		winning_color = None
+		for color in self.players:
+			vp = self._map.get_player_vp(color)
+			if vp >= 10:
+				# winning_player = self._map.get_player(color)
+				winning_color = color
+				break
+		self.post_status_note(
+			f"Game over! Player {winning_color} wins!"
+		)
+
 	def roll(self, change_turn=True):
 		'''End the previous turn, then roll the dice.'''
+
+		if change_turn and self.check_game_end():
+			self.process_game_end()
+			return
 
 		if change_turn:
 			self.change_status_turn()
@@ -848,9 +873,6 @@ class CatanApp():
 
 		for v in self._map.get_nodes():
 			self.draw_settlement_node(canvas, v)
-
-	def get_roads(self):
-		return self._road_set
 
 	def _get_road_slope(self, v1, v2):
 		'''Return float.'''
