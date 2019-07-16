@@ -1,4 +1,4 @@
-from __future__ import division
+
 import math
 
 # ENUM FOR FLAG CONSTANTS
@@ -20,14 +20,17 @@ INCOME_TO_WIN = 3 + (4 * 3) + (4 * 2) + (2 * 3)
 SETTLEMENT_COST = 7
 STARTING_CAPITAL = 3
 
+
 def DEBUG (flag, item):
 	if flags[flag]:
-		print ("DEBUG: {}".format(item))
+		print(("DEBUG: {}".format(item)))
+
 
 def get_turn (dice_roll_count):
 	"""Return turn # based on # of dice rolls"""
 
 	return math.floor ((dice_roll_count - 1) / 4) + 1
+
 
 class CatanSimul (object):
 	def __init__ (self, player, settlement_initial_quality):
@@ -95,7 +98,7 @@ class CatanSimul (object):
 				self.build_settlement(4 / 36)
 
 	def do_simul (self):
-		print ("Running experiment for player # %d" % self.player)
+		print(("Running experiment for player # %d" % self.player))
 
 		while not (self.total_income >= INCOME_TO_WIN and self.is_my_turn()):
 			self.dice_roll_count += 1
@@ -103,13 +106,13 @@ class CatanSimul (object):
 
 			self.do_dice_roll ()
 			self.do_build ()
-			
+
 			DEBUG (DB_TURN, "Dice roll %d" % (self.dice_roll_count))
 			DEBUG (DB_TURN, "Turn %d" % self.turn)
 			DEBUG (DB_TURN, "Total income is %.2f" % self.total_income)
 
 		win_turn = self.turn
-		print ("Achieved win at turn %d" % win_turn)
+		print(("Achieved win at turn %d" % win_turn))
 		DEBUG (DB_SUMMARY, "Won with %d resources" % self.total_income)
 		DEBUG (DB_SUMMARY, "")
 
@@ -123,17 +126,17 @@ class CatanSimul (object):
 
 		DEBUG (DB_SUMMARY, "")
 		DEBUG (DB_SUMMARY, "Resource distribution:")
-		for k, v in self.granular_income.iteritems():
+		for k, v in self.granular_income.items():
 			DEBUG (DB_SUMMARY, "%s ==> %.2f" % (k, v))
 
+
 if __name__ == "__main__":
-	
 	#print ("Income to win is %d" % income_to_win)
-	print ("Running experiments for strategy %d" % STRATEGY)
+	print(("Running experiments for strategy %d" % STRATEGY))
 
 	# turn debug flag on
 	flags [DB_BUILD] = True
-	
+
 	## mallocing 2
 	sq = [None] * 2
 

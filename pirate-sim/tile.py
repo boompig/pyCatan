@@ -104,14 +104,14 @@ class Tile(object):
 	def print_tile(self):
 		'''For debugging.'''
 		
-		print "resource: {}".format(self.__r.name())
-		print "vertices: {}".format(self.__v)
+		print("resource: {}".format(self.__r.name()))
+		print("vertices: {}".format(self.__v))
 		
 		if len(self.__h) > 0:
-			print "houses:"
+			print("houses:")
 			
 			for i in range(len(self.__h)):
-				print "\t{} at vertex index {}".format(self.__h[i], self.__b[i])
+				print("\t{} at vertex index {}".format(self.__h[i], self.__b[i]))
 		
 if __name__ == "__main__":
 	# simple test of tile methods
@@ -130,9 +130,9 @@ if __name__ == "__main__":
 	t.print_tile()
 	
 	# should be a free spot at v[2]
-	print t.get_buildable_vertices()
+	print(t.get_buildable_vertices())
 	
 	# add a house to the last free spot to make sure two-house rolls are properly handled
 	t.add_house(House("purple", v[2]), v[2])
 	
-	print t.rolled()
+	print(t.rolled())

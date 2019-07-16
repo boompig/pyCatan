@@ -91,5 +91,5 @@ if __name__ == "__main__":
 	
 	h = House((0, 0), "red")
 	
-	print r
-	print h
+	print(r)
+	print(h)

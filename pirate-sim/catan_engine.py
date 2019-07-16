@@ -85,7 +85,7 @@ class Engine():
 		
 		roll = random.randint(1, 6) + random.randint(1, 6)
 		
-		print "Rolled {}".format(roll)
+		print("Rolled {}".format(roll))
 		
 		# depending on the roll, show which resources will be given out
 		return self.b.get_rolled_tile(roll)
@@ -94,5 +94,5 @@ if __name__ == "__main__":
 	e = Engine()
 	
 	for i in range(5):
-		print e.roll()
+		print(e.roll())
 		
