@@ -1,13 +1,13 @@
 import random
 from hex import Hex
-from map_gen import MapGen
+# from map_gen import MapGen
 from typing import Tuple, Dict, List, Optional
 from catan_types import Vertex, Edge
 
 
 class AI():
 
-    def __init__(self, board: MapGen) -> None:
+    def __init__(self, board: 'MapGen') -> None:
         self._board = board
         self._vertex_probs = {}  # type: Dict[int, List[Vertex]]
 
