@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 from ui_constants import UIConstants
 
 class LoadScreen(Canvas):
