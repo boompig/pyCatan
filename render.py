@@ -1,7 +1,7 @@
 '''This will render all map objects.'''
 
 from utils import CatanUtils
-from Tkinter import HIDDEN
+from tkinter import HIDDEN
 
 # given a map, render it
 class CatanRender():
@@ -30,8 +30,8 @@ class CatanRender():
         
     @staticmethod
     def settle_call(event, v):
-        print "making settlement at {}".format(v)
-        print "({}, {})".format(event.x, event.y)
+        print("making settlement at {}".format(v))
+        print("({}, {})".format(event.x, event.y))
         
 if __name__ == "__main__":
     pass

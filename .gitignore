@@ -1,2 +1,6 @@
-# ignore binary Python files
+# virtualenv
+venv3
+
+# python auto-generated garbage
 *.pyc
+.mypy_cache/

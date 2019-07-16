@@ -5,7 +5,7 @@ Then I can think about smart way to index these things
 
 '''
 Honestly, my Python code is more ahead, probably.
-0. 
+0.
 	- appropriate way to index tile bodies, intersections, edges
 	- to get this, need to see map...
 	- edge = (v1, v2)
@@ -20,17 +20,17 @@ a2) Add clickable areas and differentiate between them
 	- edges
 	- vertices (nodes)
 	- tiles (body)
-	
+
 
 b) Be able to add settlements, roads
 	- small button at each intersection, that can disappear (deactivate - one time use) once a settlement is put there
 	- oblong button (or clickable area) at the road
 c) Be able to upgrade settlements to cities
 	- again, button on settlement
-	
+
 d) Be able to add robber
 	- button on tile
-	
+
 2. Single-player mechanics
 	- dice rolling
 	- turn-taking
@@ -60,12 +60,12 @@ d) Be able to add robber
 			- Year of Plenty
 			- Road Building
 			- VP cards
-			
+
 			- use limit: one per turn
 	- achievement stats
 		- longest contiguous road (this might be difficult yet fun)
 		- number of revealed knights
-			
+
 3. Multi-player mechanics
 	- turn-taking
 		- rotate the turn
@@ -85,7 +85,7 @@ d) Be able to add robber
 		- longest road <-- keep track of # game-wide
 			- the calculation here might be difficult
 		- largest army <-- keep track of # game-wide
-		
+
 4. Graphics
 	- dice
 	- development cards
@@ -96,15 +96,17 @@ d) Be able to add robber
 		- resource count
 		- development card count
 		- number of played knights
-		- longest contiguous road 
+		- longest contiguous road
 '''
+
 
 def flatten_list(l):
 	return [item for sublist in l for item in sublist]
 
+
 class CatanConstants():
 	'''Keep constants under one namespace.'''
-	
+
 	development_cards = {
 		"soldier" : 4,
 		"VP" : 5,
@@ -112,15 +114,15 @@ class CatanConstants():
 		"road building" : 2,
 		"year of plenty" : 2
 	}
-	
+
 	development_card_cost = ["wheat", "ore", "sheep"]
-	
+
 	building_costs = {
 		"settlement" : ["wheat", "brick", "sheep", "wood"],
 		"city" : ["wheat"] * 2 + ["ore"] * 3,
 		"road" : ["brick", "wood"]
 	}
-	
+
 	'''The number of tiles each resource has on a standard Catan board.'''
 	resource_distribution = {
 		"brick" : 3,
@@ -130,12 +132,12 @@ class CatanConstants():
 		"wheat" : 4,
 		"desert" : 1,
 	}
-	
+
 	'''The layout of the tiles on a Catan board.
 	Each entry represents number of tiles in successive row.'''
 	tile_layout = (
 		1,
-		2, 
+		2,
 		3,
 		2,
 		3,
@@ -144,7 +146,7 @@ class CatanConstants():
 		2,
 		1,
 	)
-	
+
 	'''The way the tokens normally ride...'''
 	token_map = {
 		"a" : 5,
@@ -166,15 +168,15 @@ class CatanConstants():
 		"q" : 3,
 		"r" : 11,
 	}
-	
+
 	'''We always make [2][0] = A and go CC.'''
 	'''Same order every time - [2][0], [1][0], [0][0], [1][-1], [2][-1] ... '''
-	
+
 	@staticmethod
 	def get_resource_distribution_pool():
 		'''Return list of strings, where each string is a tile.'''
-		
-		l_start = [[k] * v for k, v in CatanConstants.resource_distribution.iteritems()]
+
+		l_start = [[k] * v for k, v in CatanConstants.resource_distribution.items()]
 		return flatten_list(l_start)
 
 class CatanRenderConstants():
@@ -186,7 +188,8 @@ class CatanRenderConstants():
 		"wood" : "forest green",
 		"desert" : "DarkGoldenrod3",
 	}
-		
+
+
 if __name__ == "__main__":
-	print CatanConstants.get_resource_distribution_pool()
-	
+	print(CatanConstants.get_resource_distribution_pool())
+

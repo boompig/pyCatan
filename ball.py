@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 import random
 import time
 
@@ -10,7 +10,7 @@ class Hole():
 		return self._p
 		
 	def process_ball(self):
-		print "Scored {} points!".format(self._p)
+		print("Scored {} points!".format(self._p))
 
 class Sample():
 	def __init__(self, root):

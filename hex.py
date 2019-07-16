@@ -84,7 +84,7 @@ class Hex():
 		return self._v[3][0]
 
 def print_bar():
-	print "=" * 40
+	print("=" * 40)
 
 if __name__ == "__main__":
 	v = (
@@ -102,14 +102,14 @@ if __name__ == "__main__":
 	h = Hex(r, t, v)
 
 	print_bar()
-	print h.get_vertex("right")
-	print h.get_vertex("left")
+	print(h.get_vertex("right"))
+	print(h.get_vertex("left"))
 
 	print_bar()
-	print h.get_top()
-	print h.get_bottom()
-	print h.get_left()
-	print h.get_right()
+	print(h.get_top())
+	print(h.get_bottom())
+	print(h.get_left())
+	print(h.get_right())
 
 	print_bar()
-	print h.get_token()
+	print(h.get_token())

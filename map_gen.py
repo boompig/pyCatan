@@ -29,7 +29,7 @@ class MapGen():
         
         self._dev_card_deck = []
         
-        for card, num in CatanConstants.development_cards.iteritems():
+        for card, num in CatanConstants.development_cards.items():
             self._dev_card_deck.extend([card] * num)
             
         random.shuffle(self._dev_card_deck)
@@ -187,11 +187,11 @@ class MapGen():
         
         for row in self._board:
             if len(row) == 3:
-                print " ".join([f(c) for c in row])
+                print(" ".join([f(c) for c in row]))
             elif len(row) == 2:
-                print " " + " ".join([f(c) for c in row]) + " "
+                print(" " + " ".join([f(c) for c in row]) + " ")
             elif len(row) == 1:
-                print (2 * " ") + f(row[0]) + (2 * " ")
+                print((2 * " ") + f(row[0]) + (2 * " "))
                 
     def prepare(self):
         '''Create optimized data structures for easy access to some common game data.'''
@@ -413,7 +413,7 @@ class MapGen():
                         d[c].append(r)
                         
         # now add these resources to the relevant players
-        for p, r_list in d.iteritems():
+        for p, r_list in d.items():
             self._players[p].add_resources(r_list)
         
         return d
@@ -452,7 +452,7 @@ class MapGen():
         
         d = {}
         
-        for c, p in self._players.iteritems():
+        for c, p in self._players.items():
             if p.get_num_resources() > 7:
                 d[c] = p.get_num_resources() // 2 # explicit integer division
             
@@ -528,7 +528,7 @@ def gen_map():
     mg.gen()
     mg.prepare()
     
-    print mg._road_set
+    print(mg._road_set)
     
     mg.draw_ascii()
     

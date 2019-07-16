@@ -15,7 +15,7 @@ TODO break up the view and control portions
 #	IMPORTS	#
 #############
 
-from Tkinter import *
+from tkinter import *
 from catan_gen import CatanConstants, CatanRenderConstants
 from sys import exit as sys_exit
 from hex import Hex
@@ -238,7 +238,7 @@ class CatanApp():
 					# TODO - allow me to re-pickup the robber and move it again
 					self.enable_stealing()
 				else:
-					print "ROBBER FAIL"
+					print("ROBBER FAIL")
 					self.move_robber_to_hex(self._map.get_robber_hex())
 					return
 			
@@ -301,7 +301,7 @@ class CatanApp():
 		if self._map.set_robber_hex(row, col):
 			self.move_robber_to_hex(model_hex)
 		else:
-			print "AI picked same hex to put robber, skipping stealing..."
+			print("AI picked same hex to put robber, skipping stealing...")
 			#self.move_robber_to_hex(self._map.get_robber_hex())
 	
 	def automate_setup(self):
@@ -315,7 +315,7 @@ class CatanApp():
 			road = self._map.ai.get_random_road_from_settlement(v)
 			
 			if not road:
-				print "ERROR! Could not find a place to put a road"
+				print("ERROR! Could not find a place to put a road")
 			else:
 				v1, v2 = road
 			
@@ -402,7 +402,7 @@ class CatanApp():
 		self.automate_setup()
 	
 	def play_dev_card(self):
-		print "Playing dev card..."
+		print("Playing dev card...")
 		
 	def buy_dev_card(self):
 		'''User-triggered action to buy a development card.'''
@@ -415,7 +415,7 @@ class CatanApp():
 		else:
 			self.post_status_note("Successfully bought development card")
 			self.update_hand(color)
-			print "{} bought development card '{}'".format(color, card)
+			print("{} bought development card '{}'".format(color, card))
 			self.update_dev_cards(color)
 		
 	def create_build_buttons(self):
@@ -558,7 +558,7 @@ class CatanApp():
 				self._canvas.itemconfigure(b, state=DISABLED)
 			# re-enable the roll button
 			self._roll_button.config(state=NORMAL)
-			for button in self._build_buttons.itervalues():
+			for button in self._build_buttons.values():
 				button.config(state=NORMAL)
 		elif self._state == "choose building":
 			# hide the hand while building
@@ -571,7 +571,7 @@ class CatanApp():
 		elif self._state == "place additional building":
 			# disable the buttons
 			self._roll_button.config(state=DISABLED)
-			for b in self._build_buttons.itervalues():
+			for b in self._build_buttons.values():
 				b.config(state=DISABLED)
 			self._cancel_building_button.config(state=NORMAL)
 			
@@ -672,7 +672,7 @@ class CatanApp():
 		elif self._state == "place additional building":
 			# re-enable the buttons
 			self._roll_button.config(state=NORMAL)
-			for b in self._build_buttons.itervalues():
+			for b in self._build_buttons.values():
 				b.config(state=NORMAL)
 				
 			# disable the buildings
@@ -822,7 +822,7 @@ class CatanApp():
 		r = self._map.robber_steal(from_player, to_player)
 		self.update_hand(from_player)
 		self.update_hand(to_player)
-		print "Stole {} from {} and gave to {}".format(r, from_player, to_player)
+		print("Stole {} from {} and gave to {}".format(r, from_player, to_player))
 		self.post_status_note("Stole from {}".format(from_player))
 		self.change_to_state("gameplay")
 		
@@ -913,7 +913,7 @@ class CatanApp():
 		
 		# here we update the model
 		if self._map.add_road(v1, v2, color):
-			print "Building {} road between {} and {}".format(color, v1, v2)
+			print("Building {} road between {} and {}".format(color, v1, v2))
 			tag = "road_placeholder_{}_{}_{}_{}".format(v1[0], v1[1], v2[0], v2[1])
 			
 			self._canvas.itemconfigure(self._roads[(v1, v2)], fill=color, outline="black")
@@ -936,7 +936,7 @@ class CatanApp():
 				self.change_to_state("gameplay")
 		else:
 			msg = "Road must be attached to a settlement."
-			print "Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg
+			print("Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg)
 			self.post_status_note(msg, error=True)
 			
 	def cull_adjacent_settlement_nodes(self, canvas, v):
@@ -976,7 +976,7 @@ class CatanApp():
 		# reflect changes in the model
 		result = self._map.add_settlement(v, color)
 		if result:
-			print "Building {} settlement at {}".format(color, v)
+			print("Building {} settlement at {}".format(color, v))
 			
 			# TODO change the color to reflect the color of the player
 			# TODO use sprites instead of ovals
@@ -999,7 +999,7 @@ class CatanApp():
 			else:# self._state == "additional settlement placement":
 				self.change_to_state("gameplay")
 		else:
-			print "Failed to build {} settlement at {}".format(color, v)
+			print("Failed to build {} settlement at {}".format(color, v))
 			#TODO possibly other error, like not being connected to a road
 			#TODO this is a good place to use an exception
 			self.post_status_note("That building spot is too close to an existing settlement", error=True)
@@ -1014,7 +1014,7 @@ class CatanApp():
 	def add_city(self, event, v, color):
 		'''Add a city on top of existing settlement in response to user click.'''
 		
-		print "Building {} city at {}".format(color, v)
+		print("Building {} city at {}".format(color, v))
 		
 		# destroy the oval
 		self._canvas.delete(self._settlements[v])
@@ -1057,10 +1057,10 @@ class CatanApp():
 				col.set_vertices(hex_coord_latice[row_i][col_i])
 		
 	def key_pressed(self, event):
-		print repr(event.char)
+		print(repr(event.char))
 
 	def end(self, event):
-		print "exit event captured"
+		print("exit event captured")
 		self._master.destroy()
 		#sys_exit(0)
 	

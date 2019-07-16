@@ -8,7 +8,7 @@ Maybe sprites would be easier than drawing everything every time...
 #	IMPORTS		#
 #################
 
-from Tkinter import *
+from tkinter import *
 from utils import to_tkinter_coords
 
 # constants for settlement
@@ -28,14 +28,14 @@ def scale_constants(constants, new_height):
 	ratio = new_height * 1.0 / (constants["front_rect_height"] + constants["front_tri_height"])	
 	d = {}
 	
-	for k, v in constants.iteritems():
+	for k, v in constants.items():
 		d[k] = int(v * ratio)
 		
 	return d
 		
 def print_dict(d):
-	for k, v in d.iteritems():
-		print "{} ==> {}".format(k, v)	
+	for k, v in d.items():
+		print("{} ==> {}".format(k, v))	
 	
 def get_front_face_coords(constants):
 	'''Return tuple of tuples in form ( (x1, y1), ..., (xn, yn))

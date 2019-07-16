@@ -17,13 +17,13 @@ class Table():
 			if len(str(v)) > self._size[k]:
 				self._size[k] = len(str(v))
 		else:
-			print "ERROR! {} not valid row".format(k)
+			print("ERROR! {} not valid row".format(k))
 	
 	def draw_row(self, row):
-		print " | ".join([str(val).center(self._sizing[self._headings[i]]) for i, val in enumerate(row)]) 
+		print(" | ".join([str(val).center(self._sizing[self._headings[i]]) for i, val in enumerate(row)])) 
 		
 	def draw(self):
 		self.draw_row(self._headings)
 	
-		for k, v in self._d.iteritems():
+		for k, v in self._d.items():
 			draw_row(v)
