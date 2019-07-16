@@ -341,8 +341,8 @@ class CatanApp():
 		#frame.bind("<Key>", self.key_pressed)
 		# keys to end game
 		frame.bind("<Escape>", self.end)
-		frame.bind("<Return>", self.end)
-		frame.bind("<space>", self.end)
+		frame.bind("<Return>", self.roll)
+		frame.bind("<space>", self.roll)
 		frame.focus_set() # this is very important
 		frame.grid()
 		frame.master.title("Settlers of Catan: Whores and Wenches (custom expansion)")

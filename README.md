@@ -16,6 +16,6 @@ The game is incomplete! To get specifics on what is implemented and what is not,
 
 ## Keyboard Bindings
 
-- escape - ends turn
+- escape - quits game
 - return - ends turn
 - space - ends turn
