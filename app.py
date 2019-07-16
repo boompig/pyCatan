@@ -107,6 +107,7 @@ class DiceDrawer():
 			(x1 + side_length, y1 + side_length),
 		)
 
+
 def scale_to_width(lower, middle, top):
 	all_coords = lower + middle + top
 	max_width = max(x for x, y in all_coords)
@@ -124,6 +125,7 @@ def scale_to_width(lower, middle, top):
 		l.append(tuple(q))
 
 	return l
+
 
 class App():
 	'''So there is my robber sprite.'''
@@ -231,8 +233,7 @@ class App():
 	def run(self):
 		self._root.mainloop()
 
+
 if __name__ == "__main__":
 	a = App()
-
 	a.run()
-
