@@ -7,7 +7,8 @@ from hex import Hex
 from player import Player
 from settlement import Settlement
 from ai import AI
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Optional
+from catan_types import Vertex, Edge
 
 
 class SettlementPlacementException(Exception):
@@ -23,8 +24,18 @@ class MapGen():
 
     def __init__(self) -> None:
         self._decr_set = set([1, 2, 4, 6])
-        self._players = {}
+        self._players = {}  # type: Dict[str, Player]
         self.ai = AI(self)
+        self._dev_card_deck = []  # type: List[str]
+        # list of rows, where each row is a list of Hex tiles
+        self._board = []  # type: List[List[Hex]]
+        self._settlements = {}  # type: Dict[Vertex, Settlement]
+        self._roads = set([])  # type: Set[Edge]
+
+        self._vertex_map = {}  # type: Dict[Vertex, List[Hex]]
+        self._vertex_set = set([])  # type: Set[Vertex]
+        self._road_set = set([])  # type: Set[Edge]
+        self._resource_map = {}  # type: Dict[int, List[Hex]]
 
     def _make_dev_card_deck(self) -> None:
         '''Create a shuffled deck of development cards.'''
@@ -58,7 +69,7 @@ class MapGen():
     def play_development_card(self, color, card):
         '''Player with given color plays given card. Process effects.'''
 
-        pass
+        raise NotImplementedError()
 
     def get_player_vp(self, color: str) -> int:
         '''Return number of victory points for player of given color.'''
@@ -126,7 +137,7 @@ class MapGen():
                 row, col = self._get_next_tile(row, col, unplaced_layout)
 
 
-    def _get_next_tile(self, row: int, col: int, unplaced_layout: Dict[int, int]) -> Tuple[int, int]:
+    def _get_next_tile(self, row: int, col: int, unplaced_layout: Dict[int, int]) -> Vertex:
         '''Calculate next tile position from this tile position when placing tokens.'''
 
         if row == 4 and col == 0:
@@ -171,7 +182,7 @@ class MapGen():
         '''Place tiles on the board.'''
 
         for row_num, num_cols in enumerate(CatanConstants.tile_layout):
-            row = []
+            row = []  # type: List[Hex]
             self._board.append(row)
 
             for col in range(num_cols):
@@ -229,7 +240,7 @@ class MapGen():
                     self._desert_pos = (row_i, col)
                     return
 
-    def cull_bad_settlement_vertices(self, v: Tuple[int, int]) -> None:
+    def cull_bad_settlement_vertices(self, v: Vertex) -> None:
         '''Given that a settlement was built on vertex v, remove adjacent vertices from the
         set of viable building nodes for settlements. Also remove that vertex.'''
 
@@ -237,26 +248,26 @@ class MapGen():
         self.available_settlement_set.difference_update(adjacent_v_set)
         self.available_settlement_set.discard(v)
 
-    def get_nodes(self) -> Set[Tuple[int, int]]:
+    def get_nodes(self) -> Set[Vertex]:
         return self._vertex_set
 
-    def _has_road(self, v1: Tuple[int, int], v2: Tuple[int, int]) -> bool:
+    def _has_road(self, v1: Vertex, v2: Vertex) -> bool:
         '''True iff the road from v1 to v2 has been built.'''
 
         return (v1, v2) in self._roads
 
-    def _road_connects_same_color_settlement(self, v1: Tuple[int, int], v2: Tuple[int, int], color: str) -> bool:
+    def _road_connects_same_color_settlement(self, v1: Vertex, v2: Vertex, color: str) -> bool:
         '''True iff this road connects to a settlement of the same color.'''
 
         return (v1 in self._settlements and self._settlements[v1].color() == color) or \
             (v2 in self._settlements and self._settlements[v2].color() == color)
 
-    def _road_connects_same_color_road(self, v1: Tuple[int, int], v2: Tuple[int, int], color: str) -> bool:
+    def _road_connects_same_color_road(self, v1: Vertex, v2: Vertex, color: str) -> bool:
         '''True iff this road connects to another road of the same color.'''
 
         return self.get_player(color).has_road_to(v1) or self.get_player(color).has_road_to(v2)
 
-    def add_road(self, v1: Tuple[int, int], v2: Tuple[int, int], color: str, ignore_cost: bool = False) -> bool:
+    def add_road(self, v1: Vertex, v2: Vertex, color: str, ignore_cost: bool = False) -> bool:
         '''Add a road of the given color to the map. Charge the player for it.
         Rules:
         - (v1, v2) is not an existing road
@@ -279,13 +290,13 @@ class MapGen():
         elif p.get_num_roads() >=2 and not p.can_deduct_resources(cost):
             return False
         else:
-            self._roads.update((v1, v2))
+            self._roads.add((v1, v2))
             if p.get_num_roads() >= 2:
                 p.deduct_resources(cost)
             p.add_road(v1, v2)
             return True
 
-    def has_road(self, v1: Tuple[int, int], v2: Tuple[int, int]) -> bool:
+    def has_road(self, v1: Vertex, v2: Vertex) -> bool:
         '''Return true iff a road from v1 to v2 has already been built.
         Also allows for a road from v2 to v1'''
 
@@ -294,7 +305,7 @@ class MapGen():
 
         return (v1, v2) in self._roads
 
-    def add_settlement(self, v: Tuple[int, int], color: str) -> bool:
+    def add_settlement(self, v: Vertex, color: str) -> bool:
         '''Add a settlement of the given color to the map.
         Deduct the cost if building is in a valid place.
         Return False if cannot afford or cannot build.'''
@@ -337,7 +348,7 @@ class MapGen():
         return list(s)
 
 
-    def add_city(self, v: Tuple[int, int], color: str) -> bool:
+    def add_city(self, v: Vertex, color: str) -> bool:
         '''Add a city of the given color to the map.
         Upgrades existing settlement.
         Deduct the cost if building is in a valid place.
@@ -395,7 +406,7 @@ class MapGen():
     def get_resources_produced(self, roll: int) -> Dict[str, List[str]]:
         '''For the given roll, return a map of player color to resources produced.'''
 
-        d = {}
+        d = {}  # type: Dict[str, List[str]]
 
         if roll == 7:
             return d # no resources ever produced on a seven
@@ -422,7 +433,7 @@ class MapGen():
 
         return d
 
-    def get_adjacent_vertices(self, v: Tuple[int, int]) -> List[Tuple[int, int]]:
+    def get_adjacent_vertices(self, v: Vertex) -> List[Vertex]:
         '''Return all vertices adjacent to vertex v.'''
 
         adjacent_v = []
@@ -448,7 +459,7 @@ class MapGen():
             v_road_set = set([(v, v2) for v2 in self.get_adjacent_vertices(v)])
             self._road_set.update(v_road_set)
 
-    def get_roads(self) -> Set[Tuple[Tuple[int, int], Tuple[int, int]]]:
+    def get_roads(self) -> Set[Edge]:
         return self._road_set
 
     def robber_discard(self):
@@ -462,7 +473,7 @@ class MapGen():
 
         return d
 
-    def _get_hex_at_coords(self, row: int, col: int) -> Hex:
+    def _get_hex_at_Vertexs(self, row: int, col: int) -> Hex:
         '''Return hex object at the given coordinates.'''
 
         return self._board[row][col]
@@ -471,7 +482,7 @@ class MapGen():
         '''Return the hex with the robber on it.'''
 
         #return self._robber_hex
-        return self._get_hex_at_coords(*self._robber_hex)
+        return self._get_hex_at_Vertexs(*self._robber_hex)
 
     def set_robber_hex(self, row: int, col: int) -> bool:
         '''Set the position of the robber.
@@ -486,7 +497,7 @@ class MapGen():
             return True
             #self._board[row][col]
 
-    def robber_steal(self, from_player: str, to_player: str) -> str:
+    def robber_steal(self, from_player: str, to_player: str) -> Optional[str]:
         '''Robber steals from from_player and gives to to_player.
         Return the resource that was stolen.
         If from_player has no cards, return None.'''
@@ -503,18 +514,15 @@ class MapGen():
         Used in resource distribution when dice are rolled.'''
 
         self._resource_map = {}
-
         for row in self._board:
             for hex in row:
-                if hex.get_number() is None:
-                    self._resource_map["desert"] = [hex] # this will be the only entry
+                num = hex.get_number()
+                if num is None:
+                    # this is the desert hex and is excluded from the resource map
                     continue
-                elif hex.get_number() not in self._resource_map:
-                    self._resource_map[hex.get_number()] = []
+                self._resource_map.setdefault(num, [])
+                self._resource_map[num].append(hex)
 
-                self._resource_map[hex.get_number()].append(hex)
-
-#        CatanUtils.print_dict(self._resource_map)
 
     def get_map(self) -> List[List[Hex]]:
         return self._board

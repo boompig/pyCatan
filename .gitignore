@@ -4,3 +4,7 @@ venv3
 # python auto-generated garbage
 *.pyc
 .mypy_cache/
+monkeytype.sqlite3
+
+# editor
+.vscode/

@@ -1,13 +1,15 @@
 import random
-
-
 from hex import Hex
 from map_gen import MapGen
-from typing import Tuple
+from typing import Tuple, Dict, List, Optional
+from catan_types import Vertex, Edge
+
+
 class AI():
 
     def __init__(self, board: MapGen) -> None:
         self._board = board
+        self._vertex_probs = {}  # type: Dict[int, List[Vertex]]
 
     def prepare(self) -> None:
         '''Prepare the AI by letting it calculate most probable settlements.'''
@@ -33,7 +35,7 @@ class AI():
 
         return n
 
-    def get_random_road_from_settlement(self, v: Tuple[int, int]) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    def get_random_road_from_settlement(self, v: Vertex) -> Optional[Edge]:
         '''Return a random road stemming from settlement located at v.'''
 
         adjacent_v_set = self._board.get_adjacent_vertices(v)
@@ -43,7 +45,7 @@ class AI():
             if not self._board.has_road(v, v2):
                return (v, v2) # the road was built
 
-        return False # no road can be built from this settlement
+        return None # no road can be built from this settlement
 
     def _eval_hex_robber_score(self, hex: Hex, color: str) -> int:
         '''Return the robber score for this hex.
@@ -80,7 +82,7 @@ class AI():
 
         return random.choice(l)
 
-    def get_smart_robber_placement(self, color: str) -> Tuple[int, int]:
+    def get_smart_robber_placement(self, color: str) -> Vertex:
         '''Return the *position* of the hex on which to place the robber.
         Should be a high-producing hex with no settlements/cities by this player.
         Color is the color of the player placing the robber.'''
@@ -95,10 +97,10 @@ class AI():
                     #best_hex = hex
                     best_hex = (row_i, col)
                     max_score = score
-
+        assert best_hex is not None
         return best_hex
 
-    def get_best_settlement(self) -> Tuple[int, int]:
+    def get_best_settlement(self) -> Optional[Vertex]:
         '''Return the settlement with the highest combined prob. of generating a resource.'''
 
         sorted_vals = list(self._vertex_probs.keys())
@@ -113,8 +115,7 @@ class AI():
                     return v
             # all of these are now off the table
             del(self._vertex_probs[val])
-
-        return False
+        return None
 
     def get_random_settlement(self):
         '''Return a valid settlement placement.'''

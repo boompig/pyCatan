@@ -8,8 +8,8 @@ Maybe sprites would be easier than drawing everything every time...
 #	IMPORTS		#
 #################
 
-from tkinter import *
-from utils import *
+from tkinter import ALL, Tk, Canvas
+from utils import CatanUtils
 
 # constants for settlement
 settlement_constants = {
@@ -71,19 +71,19 @@ def draw_settlement(canvas, offset, top, constants):
 	front = get_front_face_coords(offset, constants)
 
 	canvas.create_polygon(
-		*to_tkinter_coords(front, top),
+		*CatanUtils.get_tkinter_coords(front, top),
 		fill="blue",
 		outline="black"
 	)
 
 	canvas.create_polygon(
-		*to_tkinter_coords(get_side_roof_coords(offset, constants, front), top),
+		*CatanUtils.get_tkinter_coords(get_side_roof_coords(offset, constants, front), top),
 		fill="blue",
 		outline="black"
 	)
 
 	canvas.create_polygon(
-		*to_tkinter_coords(get_side_coords(offset, constants, front), top),
+		*CatanUtils.get_tkinter_coords(get_side_coords(offset, constants, front), top),
 		fill="blue",
 		outline="black"
 	)
@@ -119,19 +119,19 @@ def draw_city(canvas, offset, top, constants):
 	front = get_city_front_face_coords(constants)
 
 	canvas.create_polygon(
-		*to_tkinter_coords(front, top, offset),
+		*CatanUtils.get_tkinter_coords(front, top, offset),
 		fill = "red",
 		outline = "black"
 	)
 
 	canvas.create_polygon(
-		*to_tkinter_coords(get_short_tower_coords(constants, front), top, offset),
+		*CatanUtils.get_tkinter_coords(get_short_tower_coords(constants, front), top, offset),
 		fill = "red",
 		outline = "black"
 	)
 
 	canvas.create_polygon(
-		*to_tkinter_coords(get_tall_tower_coords(constants, front), top, offset),
+		*CatanUtils.get_tkinter_coords(get_tall_tower_coords(constants, front), top, offset),
 		fill = "red",
 		outline = "black"
 	)

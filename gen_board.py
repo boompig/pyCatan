@@ -314,11 +314,12 @@ class CatanApp():
 		# do all 8
 		for i in range(8):
 			v = self._map.ai.get_best_settlement()
+			assert v is not None
 			self.add_settlement(None, v)
 			road = self._map.ai.get_random_road_from_settlement(v)
 
-			if not road:
-				print("ERROR! Could not find a place to put a road")
+			if road is None:
+				raise Exception("ERROR! Could not find a place to put a road")
 			else:
 				v1, v2 = road
 

@@ -6,6 +6,10 @@
 from catan_gen import CatanConstants
 from utils import CatanUtils
 from typing import Optional, Tuple
+from catan_types import Vertex
+
+
+Vertices = Tuple[Vertex, Vertex, Vertex, Vertex, Vertex, Vertex]
 
 
 class Hex():
@@ -16,51 +20,53 @@ class Hex():
 
 	def __init__(self, resource: str) -> None:
 		self._r = resource
-		self._t = None
-		self._n = None
-		self._v = []
+		self._tile_type = ""
+		self._number = -1
+		# coordinates of vertices
+		self._vertices = None  # type: Optional[Vertices]
 
 	def get_resource(self) -> str:
 		return self._r
 
-	def set_vertices(self, vertices: Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]) -> None:
-		self._v = vertices
+	def set_vertices(self, vertices: Vertices) -> None:
+		self._vertices = vertices
 
-	def get_vertices(self) -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]:
-		return self._v
+	def get_vertices(self) -> Vertices:
+		assert self._vertices is not None
+		return self._vertices
 
 	def set_token(self, t: str) -> None:
-		self._t = t
-		self._n = CatanConstants.token_map[self._t]
+		self._tile_type = t
+		self._number = CatanConstants.token_map[self._tile_type]
 
 	def get_number(self) -> Optional[int]:
-		return self._n
+		return self._number
 
 	def get_token(self):
 		'''Return the token letter associated with this hex.
 		If it is a desert hex, return the string "DESERT"'''
 
-		if self._t is None:
+		if self._tile_type is None:
 			return "DESERT"
 		else:
-			return self._t
+			return self._tile_type
 
 	def get_num_dots(self) -> int:
 		'''Return the number of dots on the token for this hex.'''
 
-		if self._n is None:
+		if self._number is None:
 			return 0
 		else:
-			return CatanUtils.get_num_token_dots(self._n)
+			return CatanUtils.get_num_token_dots(self._number)
 
 	def get_vertex(self, index):
 		if isinstance(index, int):
-			return self._v[index]
+			return self._vertices[index]
 		elif isinstance(index, str):
 			if index == "left":
-				return self._v[0]
+				return self._vertices[0]
 			elif index == "right":
-				return self._v[3]
+				return self._vertices[3]
 
 	def get_center(self) -> Tuple[float, float]:
 		'''Return the center of this tile.'''
@@ -71,44 +77,17 @@ class Hex():
 		)
 
 	def get_top(self) -> int:
-		return self._v[1][1]
+		assert self._vertices is not None
+		return self._vertices[1][1]
 
 	def get_bottom(self) -> int:
-		return self._v[-1][1]
+		assert self._vertices is not None
+		return self._vertices[-1][1]
 
 	def get_left(self) -> int:
-		return self._v[0][0]
+		assert self._vertices is not None
+		return self._vertices[0][0]
 
 	def get_right(self) -> int:
-		return self._v[3][0]
-
-def print_bar():
-	print("=" * 40)
-
-if __name__ == "__main__":
-	v = (
-		(0, 1),
-		(1, 2),
-		(2, 2),
-		(3, 1),
-		(2, 0),
-		(1, 0),
-	)
-
-	r = "wood"
-	t = 9
-
-	h = Hex(r, t, v)
-
-	print_bar()
-	print(h.get_vertex("right"))
-	print(h.get_vertex("left"))
-
-	print_bar()
-	print(h.get_top())
-	print(h.get_bottom())
-	print(h.get_left())
-	print(h.get_right())
-
-	print_bar()
-	print(h.get_token())
+		assert self._vertices is not None
+		return self._vertices[3][0]

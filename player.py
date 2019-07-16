@@ -1,6 +1,7 @@
 import random
 from settlement import Settlement
-from typing import List, Tuple
+from typing import List, Dict, Optional
+from catan_types import Vertex, Edge
 
 
 class Player():
@@ -9,17 +10,14 @@ class Player():
 	def __init__(self) -> None:
 		'''Create a new Catan player.'''
 
-		self._resources = {}
+		self._resources = {}  # type: Dict[str, int]
 		self._num_resources = 0
 
 		self._vp = 0
-		self._settlements = []
-		self._roads = []
+		self._settlements = []  # type: List[Settlement]
+		self._roads = []  # type: List[Edge]
 
-		self._dev_cards = {}
-
-		# TODO here have stash of settlements, cities, roads that are unbuilt
-		# TODO here have
+		self._dev_cards = {}  #type: Dict[str, int]
 
 	def get_num_resources(self) -> int:
 		'''Return the number of resources in the player's hand.'''
@@ -63,7 +61,7 @@ class Player():
 
 		self._vp += 1
 
-	def add_road(self, v1: Tuple[int, int], v2: Tuple[int, int]) -> None:
+	def add_road(self, v1: Vertex, v2: Vertex) -> None:
 		'''Add a road.'''
 
 		self._roads.append((v1, v2))
@@ -82,7 +80,7 @@ class Player():
 		'''Return settlement at the given index.'''
 
 		if i >= len(self._settlements):
-			return None
+			raise Exception(f"No settlement with index {i}")
 		else:
 			return self._settlements[i]
 
@@ -117,7 +115,7 @@ class Player():
 
 		return s[:-2]
 
-	def steal_resource(self) -> str:
+	def steal_resource(self) -> Optional[str]:
 		'''Return (discard) random resource.
 		If the player has no resources, return None.'''
 
@@ -134,14 +132,12 @@ class Player():
 				return k
 			else:
 				i += self._resources[k]
-
-		print(self._num_resources)
-		print(n)
+		return None
 
 	def get_monopoly_resources(self, r):
 		'''Get all resources of type r. Discard.'''
 
-		pass
+		raise NotImplementedError()
 
 	def get_num_vp(self) -> int:
 		'''Return number of victory points this player has.'''
@@ -166,7 +162,7 @@ class Player():
 
 		return self._resources
 
-	def has_road_to(self, v: Tuple[int, int]) -> bool:
+	def has_road_to(self, v: Vertex) -> bool:
 		'''Return True iff this player has a road leading to vertex v.'''
 
 		for road in self._roads:

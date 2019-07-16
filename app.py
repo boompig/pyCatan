@@ -7,7 +7,7 @@ Consider using images and sprites
 #	IMPORTS		#
 #################
 
-from tkinter import *
+from tkinter import Tk, Canvas, StringVar,Label, Button
 from utils import CatanUtils
 import random
 
