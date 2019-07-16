@@ -1,12 +1,15 @@
 import random
 
 
+from hex import Hex
+from map_gen import MapGen
+from typing import Tuple
 class AI():
 
-    def __init__(self, board):
+    def __init__(self, board: MapGen) -> None:
         self._board = board
 
-    def prepare(self):
+    def prepare(self) -> None:
         '''Prepare the AI by letting it calculate most probable settlements.'''
 
         self._vertex_probs = {}
@@ -18,7 +21,7 @@ class AI():
                 self._vertex_probs[n] = []
             self._vertex_probs[n].append(v)
 
-    def _eval_vertex_value(self, v):
+    def _eval_vertex_value(self, v: Tuple[int, int]) -> int:
         '''Evaluate the value of the given vertex.
         This is done by adding all the dots of the adjacent hexes.
         This is a rough measure of probability.'''
@@ -30,7 +33,7 @@ class AI():
 
         return n
 
-    def get_random_road_from_settlement(self, v):
+    def get_random_road_from_settlement(self, v: Tuple[int, int]) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         '''Return a random road stemming from settlement located at v.'''
 
         adjacent_v_set = self._board.get_adjacent_vertices(v)
@@ -42,7 +45,7 @@ class AI():
 
         return False # no road can be built from this settlement
 
-    def _eval_hex_robber_score(self, hex, color):
+    def _eval_hex_robber_score(self, hex: Hex, color: str) -> int:
         '''Return the robber score for this hex.
         Hex gets a point value of 0 if `color` is on it.
         Neutral hexes get a point-value of 1 for tie-break.
@@ -66,7 +69,7 @@ class AI():
 
         return score
 
-    def get_random_robber_pick(self):
+    def get_random_robber_pick(self) -> str:
         '''Return a color to steal from. This is random.'''
 
         l = []
@@ -77,7 +80,7 @@ class AI():
 
         return random.choice(l)
 
-    def get_smart_robber_placement(self, color):
+    def get_smart_robber_placement(self, color: str) -> Tuple[int, int]:
         '''Return the *position* of the hex on which to place the robber.
         Should be a high-producing hex with no settlements/cities by this player.
         Color is the color of the player placing the robber.'''
@@ -95,7 +98,7 @@ class AI():
 
         return best_hex
 
-    def get_best_settlement(self):
+    def get_best_settlement(self) -> Tuple[int, int]:
         '''Return the settlement with the highest combined prob. of generating a resource.'''
 
         sorted_vals = list(self._vertex_probs.keys())
