@@ -79,7 +79,7 @@ class Player():
 	def get_settlement(self, i):
 		'''Return settlement at the given index.'''
 
-		if i >= self._settlements:
+		if i >= len(self._settlements):
 			return None
 		else:
 			return self._settlements[i]

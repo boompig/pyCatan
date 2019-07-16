@@ -1,45 +1,45 @@
 1. Generate a Catan map
 	- TODO ports
 	- done except for ports
-	
+
 2. Render the Catan map
 	- TODO ports
 	- done except for ports
-	
+
 3. Settlement / city placement
 	- DONE
-	
+
 	- TODO create settlement and city sprites
-	
+
 4. Resource distribution
 	- allocate appropriate number of resources when that number is rolled
 
 	- DONE
-	
+
 5. Road-building
 	- initial roads can only be built beside settlements (of same color)
 	- later roads can be built beside settlements or other roads (of same color)
 	- cannot override existing roads
-	
+
 	- TODO charge for later roads
 
 	- DONE except for charging fee
-	
+
 6. Initial placement
 	- DONE
-	
+
 7. Robber
 	- difficulty in dragging object - not sure Tkinter has explicit support for this
-	
+
 	- TODO create sprite
-	- TODO allow card discarding 
+	- TODO allow card discarding
 
 8. GUI
 	- create a "God" window which shows contents of each player's hand similar to what exists now
 		- this will allow me to monitor ebb and flow of resources
-	
+
 	- create a top bar which shows only content of current player's hand
 		- this will allow me to select resources to discard
 		- I could draw a mock-up of this...
-	
+
 
