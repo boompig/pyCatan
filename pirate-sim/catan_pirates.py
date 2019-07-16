@@ -1,4 +1,3 @@
-
 import math
 
 # ENUM FOR FLAG CONSTANTS
@@ -21,18 +20,18 @@ SETTLEMENT_COST = 7
 STARTING_CAPITAL = 3
 
 
-def DEBUG (flag, item):
+def DEBUG(flag, item):
 	if flags[flag]:
 		print(("DEBUG: {}".format(item)))
 
 
-def get_turn (dice_roll_count):
+def get_turn(dice_roll_count):
 	"""Return turn # based on # of dice rolls"""
 
 	return math.floor ((dice_roll_count - 1) / 4) + 1
 
 
-class CatanSimul (object):
+class CatanSimul(object):
 	def __init__ (self, player, settlement_initial_quality):
 		"""Run simul for the given player."""
 
@@ -54,10 +53,10 @@ class CatanSimul (object):
 			'resources' : 0
 		}
 
-	def is_my_turn (self):
+	def is_my_turn(self):
 		return (self.dice_roll_count % 4) == (self.player % 4)
 
-	def do_dice_roll (self):
+	def do_dice_roll(self):
 		"""Do a dice roll. Adjust income accordingly. Part 1 of turn."""
 
 		turn_income = 0.0
@@ -72,7 +71,7 @@ class CatanSimul (object):
 		assert turn_income < 1, "Pr. income should be < 1 every turn"
 		self.granular_income['gold'] += (1 - turn_income)
 
-	def build_settlement (self, settlement_quality):
+	def build_settlement(self, settlement_quality):
 		"""settlement_quality - Pr (resource) from this settlement"""
 
 		DEBUG (DB_BUILD, "Built settlement at turn %d" % self.turn)
@@ -82,7 +81,7 @@ class CatanSimul (object):
 		self.settlement_total_income.append(0)
 		self.current_capital -= SETTLEMENT_COST
 
-	def do_build (self):
+	def do_build(self):
 		"""Build settlements based on given strategy"""
 
 		# can only build on your turn
@@ -97,7 +96,7 @@ class CatanSimul (object):
 			elif self.turn  > 4 and (self.current_capital >= 8) and (len (self.settlement_total_income) < 5):
 				self.build_settlement(4 / 36)
 
-	def do_simul (self):
+	def do_simul(self):
 		print(("Running experiment for player # %d" % self.player))
 
 		while not (self.total_income >= INCOME_TO_WIN and self.is_my_turn()):
@@ -135,7 +134,7 @@ if __name__ == "__main__":
 	print(("Running experiments for strategy %d" % STRATEGY))
 
 	# turn debug flag on
-	flags [DB_BUILD] = True
+	flags[DB_BUILD] = True
 
 	## mallocing 2
 	sq = [None] * 2
