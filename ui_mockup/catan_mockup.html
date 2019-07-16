@@ -6,20 +6,20 @@ from the internet is getting really fucking annoying -->
 <html>
 	<head>
 		<meta charset="UTF-8" />
-		
+
 		<!-- general CSS -->
 		<link rel="stylesheet" type="text/css" href="style.css">
 		<link rel="stylesheet" type="text/css" href="player_tiles.css">
 		<link rel="stylesheet" type="text/css" href="hex.css">
-		
+
 		<!-- JQuery -->
 		<script src="jquery-1.9.1.min.js"></script>
-		
+
 		<!-- Catan-related scripts -->
 		<script src="catan.js"></script>
 		<script src="catan_board.js"></script>
 		<script src="catan_player.js"></script>
-		
+
 		<!-- basic script -->
 		<script>
 			$(document).ready(function() {
@@ -27,17 +27,17 @@ from the internet is getting really fucking annoying -->
 				$("#action_tile_container").hide();
 				// initially hide trade panel
 				$("#trade_panel").hide();
-				
+
 				// set console to auto-scroll
 				// vanilla JS
 				var textarea = document.getElementById('console');
 				textarea.scrollTop = textarea.scrollHeight;
-								
+
 				set_action_button_events();
-				
+
 				// generate stuff in template
 				Catan.generate_template_player_stats();
-				
+
 				// add template to non-template sections
 				Catan.generate_resource_bar();
 				Catan.generate_player_tiles();
@@ -45,31 +45,31 @@ from the internet is getting really fucking annoying -->
 				Catan.generate_buy_buttons();
 				CatanBoard.generate_board();
 			});
-			
+
 			function set_trade_button_events() {
 				$("#trade_button").click(function() {
 					$("#trade_panel").show();
 				});
-				
+
 				$(".action_button").not("#trade_button").click(function() {
 					$("#trade_panel").hide();
 				});
 			}
-			
+
 			function set_buy_button_events() {
 				$("#buy_button").click(function() {
 					$("#action_tile_container").show();
 				});
-				
+
 				$(".action_button").not("#buy_button").click(function() {
 					$("#action_tile_container").hide();
 				});
 			}
-			
+
 			function set_action_button_events() {
 				set_buy_button_events();
 				set_trade_button_events();
-				
+
 				$("#end_turn_button").click(function() {
 					Catan.change_turn();
 				});
@@ -81,14 +81,14 @@ from the internet is getting really fucking annoying -->
 			<div class="resource_container">0
 				<!--<span class="resource_count">0</span>-->
 			</div> <!-- end resource container -->
-			
+
 			<button class="buy_button">
 				<span class="buy_item_name"></span>
 				<span class="buy_item_cost">
 					<span class="resource_logo_small template" />
 				</span>
 			</button> <!-- end buy button-->
-			
+
 			<div class="player_tile">
 				<div class="player_tile_banner">
 					<span class="player_color_square"></span>
@@ -101,7 +101,7 @@ from the internet is getting really fucking annoying -->
 					</span>
 				</div> <!-- end player stats container -->
 			</div> <!-- end player tile -->
-			
+
 			<div class="trade_resource_tile">
 				<button class="more_trade_button trade_button">+1</button>
 				<span class="trade_resource">
@@ -110,27 +110,27 @@ from the internet is getting really fucking annoying -->
 				</span> <!-- end trade resource -->
 				<button class="less_trade_button trade_button">-1</button>
 			</div> <!-- end trade resource tile -->
-			
+
 			<div class="hex">
 				<div class="left"></div>
 				<div class="middle"></div>
 				<div class="right"></div>
 			</div>
 		</div> <!-- end templates -->
-	
+
 		<div id="container">
 			<div id="resource_bar">
 				<!-- auto-generated code here -->
 			</div> <!-- end resource bar -->
-			
+
 			<div id="app_container">
 				<div id="board">
 					<!--  auto-gen hexes go here -->
-				</div> <!-- end board -->				
+				</div> <!-- end board -->
 				<div id="player_tile_container">
 					<!-- auto-generated code here -->
 				</div><!-- end player tile container -->
-					
+
 				<div id="action_window">
 					<div id="action_tile_container">
 						<!-- auto-generated code goes here -->
@@ -143,9 +143,9 @@ from the internet is getting really fucking annoying -->
 					<div id="trade_panel">
 						<!-- auto-generated code goes here -->
 					</div>
-				</div> <!-- end action window --> 
+				</div> <!-- end action window -->
 			</div> <!-- end app container -->
-			
+
 			<textarea id="console" readonly="readonly">
 				[SYS] Debug and game info gets printed here
 			</textarea>

@@ -15,6 +15,12 @@ To run with Tkinter graphics, run
 python catan_tk.py
 ```
 
+There is a partially-implemented loading screen in `ui/load_screen.py`.
+
+## JS UI
+
+There is a partially-implemented javascript UI in `ui_mockup` folder. Run with `http-server` command and navigate to `catan_mockup.html`
+
 ## Game Features
 
 The game is incomplete! To get specifics on what is implemented and what is not, see `progress.txt`.
