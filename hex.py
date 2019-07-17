@@ -19,14 +19,14 @@ class Hex():
 	'''
 
 	def __init__(self, resource: str) -> None:
-		self._r = resource
+		self._resource = resource
 		self._tile_type = ""
 		self._number = -1
 		# coordinates of vertices
 		self._vertices = None  # type: Optional[Vertices]
 
 	def get_resource(self) -> str:
-		return self._r
+		return self._resource
 
 	def set_vertices(self, vertices: Vertices) -> None:
 		self._vertices = vertices

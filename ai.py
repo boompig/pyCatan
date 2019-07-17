@@ -6,7 +6,7 @@ from catan_types import Vertex, Edge
 
 class AI():
 
-    def __init__(self, board: 'MapGen') -> None:
+    def __init__(self, board: 'Game') -> None:
         self._board = board
         self._vertex_probs = {}  # type: Dict[int, List[Vertex]]
 
@@ -70,7 +70,7 @@ class AI():
 
         return score
 
-    def get_random_robber_pick(self) -> str:
+    def get_random_robber_pick(self) -> Optional[str]:
         '''Return a color to steal from. This is random.'''
 
         l = []
@@ -78,8 +78,10 @@ class AI():
         for v in self._board.get_robber_hex().get_vertices():
             if v in self._board._settlements:
                 l.append(self._board._settlements[v].color())
-
-        return random.choice(l)
+        if l == []:
+            return None
+        else:
+            return random.choice(l)
 
     def get_smart_robber_placement(self, color: str) -> Vertex:
         '''Return the *position* of the hex on which to place the robber.
@@ -129,7 +131,7 @@ class AI():
 
         # pick a random settlement to start the road from
         player = self._board.get_player(color)
-        nexi = [player.get_settlement(i) for i in range(player.get_num_settlements())]
+        nexi = player.get_settlements()
         random.shuffle(nexi)
 
         # if I made

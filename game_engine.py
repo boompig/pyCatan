@@ -12,12 +12,13 @@ from ai import AI
 from typing import Dict, List, Set, Optional
 from catan_types import Vertex, Edge
 import logging
+from enum import Enum, auto
 
 
 logger = logging.getLogger(__name__)
 
 
-class SettlementPlacementException(Exception):
+class SettlementPlacementError(Exception):
     pass
 
 
@@ -25,10 +26,30 @@ class DevelopmentCardError(Exception):
     pass
 
 
-class MapGen():
+class CityUpgradeError(Exception):
+    pass
+
+
+class RoadPlacementError(Exception):
+    pass
+
+
+class GameState(Enum):
+    # FIRST_SETTLEMENT_PLACEMENT = auto()
+    # SECOND_SETTLEMENT_PLACEMENT = auto()
+    # FIRST_ROAD_PLACEMENT = auto()
+    # SECOND_ROAD_PLACEMENT = auto()
+    INITIAL_PLACEMENT = auto()
+    ROLL_DICE = auto()
+    GAMEPLAY = auto()
+
+
+class Game():
     '''Engine for generating Catan maps.'''
 
-    def __init__(self) -> None:
+    def __init__(self, starting_color: str,
+                 colors: List[str],
+                 hex_coord_lattice) -> None:
         self._decr_set = set([1, 2, 4, 6])
         self._players = {}  # type: Dict[str, Player]
         self.ai = AI(self)
@@ -43,40 +64,75 @@ class MapGen():
         self._road_set = set([])  # type: Set[Edge]
         self._resource_map = {}  # type: Dict[int, List[Hex]]
 
+        self._is_game_over = False
+        # index into self.colors
+        self._turn = colors.index(starting_color)
+        self._colors = colors
+        self._state = GameState.INITIAL_PLACEMENT
+        self._hex_coord_lattice = hex_coord_lattice
+
         # where do the special cards reside?
         self._longest_road_player = None  # type: Optional[Player]
         self._largest_army_player = None  # type: Optional[Player]
         self._longest_road_length = 0
         self._largest_army_num_knights = 0
 
+        self._create_players(self._colors)
+        self._generate_board()
+        self._make_dev_card_deck()
+        self._prepare_data_structures()
+
     def _make_dev_card_deck(self) -> None:
         '''Create a shuffled deck of development cards.'''
 
         self._dev_card_deck = []
-
         for card, num in CatanConstants.development_cards.items():
             self._dev_card_deck.extend([card] * num)
-
         random.shuffle(self._dev_card_deck)
 
-    def gen(self) -> None:
-        # this is a mapping of rows to hexes...
-        self._board = []
-
+    def _generate_board(self) -> None:
+        '''Generate the board randomly'''
         # create hexes with resources, shuffle
-        deck = self._make_deck()
-
+        tile_deck = self._get_random_tile_deck()
         # arrange deck on the board (so create placement)
-        self._place_tiles(deck)
-
+        self._place_tiles(tile_deck)
         # assign tokens
         self._assign_tokens()
+        # once the board is set, have to set vertices for the hexes
+        for row_i, row in enumerate(self._board):
+            for col_i, hex in enumerate(row):
+                hex.set_vertices(self._hex_coord_lattice[row_i][col_i])
 
-        # and draw it
-        self.draw()
+    @property
+    def is_game_over(self) -> bool:
+        return self._is_game_over
 
-        # create development card deck
-        self._make_dev_card_deck()
+    def roll_dice(self) -> int:
+        '''
+        Roll the dice and distribute resources based on the outcome
+        It is up to the caller to handle a 7 (robber and discard events)'''
+        assert self._state == GameState.ROLL_DICE
+        r1 = random.randint(1, 6)
+        r2 = random.randint(1, 6)
+        roll = r1 + r2
+        self.produce_resources_from_roll(roll)
+        return roll
+
+    def check_game_over(self):
+        '''Check whether the game is over and set appropriate variables'''
+        for _, player in self._players.items():
+            if player.get_num_vp() >= 10:
+                self._is_game_over = True
+                break
+
+    def next_turn(self) -> None:
+        '''Roll over to the next turn'''
+        assert self._state != GameState.GAMEPLAY
+        self.check_game_over()
+        self._turn = (self._turn + 1) % len(self._colors)
+
+    def get_current_color(self) -> str:
+        return self._colors[self._turn]
 
     def play_development_card(self, color, card):
         '''Player with given color plays given card. Process effects.'''
@@ -88,6 +144,9 @@ class MapGen():
 
         p = self.get_player(color)
         return p.get_num_vp()
+
+    def has_development_cards(self) -> bool:
+        return len(self._dev_card_deck) > 0
 
     def get_development_card(self, color: str) -> str:
         '''Give out a development card to the player if they can afford it.
@@ -106,11 +165,11 @@ class MapGen():
         else:
             raise DevelopmentCardError(f"Player {color} cannot afford to buy a development card");
 
-    def create_players(self, colors: List[str]) -> None:
+    def _create_players(self, colors: List[str]) -> None:
         '''Create brand new players. For now, they are just placeholders.'''
 
-        for c in colors:
-            self._players[c] = Player()
+        for color in colors:
+            self._players[color] = Player()
 
     def get_player(self, color: str) -> Player:
         '''Return the player with the given color.'''
@@ -147,7 +206,6 @@ class MapGen():
 
             if len(unplaced_layout) > 0:
                 row, col = self._get_next_tile(row, col, unplaced_layout)
-
 
     def _get_next_tile(self, row: int, col: int, unplaced_layout: Dict[int, int]) -> Vertex:
         '''Calculate next tile position from this tile position when placing tokens.'''
@@ -193,16 +251,15 @@ class MapGen():
     def _place_tiles(self, deck: List[str]) -> None:
         '''Place tiles on the board.'''
 
-        for row_num, num_cols in enumerate(CatanConstants.tile_layout):
+        for num_cols in CatanConstants.tile_layout:
             row = []  # type: List[Hex]
             self._board.append(row)
 
             for col in range(num_cols):
                 row.append(Hex(deck.pop()))
 
-    def _make_deck(self) -> List[str]:
+    def _get_random_tile_deck(self) -> List[str]:
         '''Return a shuffled deck of unplaced resources.'''
-
         deck = CatanConstants.get_resource_distribution_pool()
         random.shuffle(deck)
         return deck
@@ -220,18 +277,12 @@ class MapGen():
             elif len(row) == 1:
                 print((2 * " ") + f(row[0]) + (2 * " "))
 
-    def prepare(self) -> None:
+    def _prepare_data_structures(self) -> None:
         '''Create optimized data structures for easy access to some common game data.'''
-
-        # TODO
-        #CatanApp.set_vertices(self._board) # this part is important
         self._create_resource_map()
         self._create_vertex_map()
         self._create_vertex_set()
         self._create_road_set()
-
-        self._settlements = {}
-        self._roads = set([])
 
         # this is the available set of nodes on which settlements can be built
         self.available_settlement_set = self._vertex_set.copy()
@@ -285,48 +336,50 @@ class MapGen():
         else:
             return (v1, v2)
 
-    def add_road(self, v1: Vertex, v2: Vertex, color: str, ignore_cost: bool = False) -> bool:
+    def add_road(self, v1: Vertex, v2: Vertex, color: str, ignore_cost: bool = False) -> None:
         '''Add a road of the given color to the map. Charge the player for it.
         Rules:
         - (v1, v2) is not an existing road
         - at least one of (v1, v2) must connect to a same color settlement OR
         - at least one of (v1, v2) must connect to a same color road
-        Road spans between v1 and v2.'''
+        Road spans between v1 and v2.
+        Throw exception on error'''
 
         v1, v2 = self._normalize_road(v1, v2)
+
+        if not self.can_place_road(v1, v2, color):
+            raise RoadPlacementError(f"Cannot place road for player {color}")
 
         p = self.get_player(color)
         cost = CatanConstants.building_costs["road"]
 
-        # first condition only applies to first 2 roads
-        if (self._has_road(v1, v2) or
-            not (self._road_connects_same_color_settlement(v1, v2, color) or
-                 (self._road_connects_same_color_road(v1, v2, color) and
-                  p.get_num_roads() >= 2))):
-            return False
-        elif p.get_num_roads() >= 2 and not p.can_deduct_resources(cost):
-            return False
-        else:
-            self._roads.add((v1, v2))
-            if p.get_num_roads() >= 2:
-                p.deduct_resources(cost)
-            p.add_road(v1, v2)
-            # now figure out whether this makes this road the longest road
+        if not ignore_cost and not p.can_deduct_resources(cost):
+            raise RoadPlacementError("cannot afford road")
 
-            road_length = self._get_road_length(v1, color)
+        self._roads.add((v1, v2))
+        if p.get_num_roads() >= 2:
+            p.deduct_resources(cost)
+        p.add_road(v1, v2)
+        # now figure out whether this makes this road the longest road
+
+        road_length = self._get_road_length(v1, color)
+        if not ignore_cost:
             logger.debug(f"{color}'s new road has length {road_length}")
-            if ((self._longest_road_player is None and road_length >= 5) or
-                    (road_length > self._longest_road_length)):
-                if self._longest_road_player:
-                    self._longest_road_player.remove_special_card("longest road")
-                    if self._longest_road_player != p:
-                        logger.info(f"{self._longest_road_player} lost longest road card")
-                p.add_special_card("longest road")
-                logger.info(f"{color} now has longest road with a road length of {road_length}")
-                self._longest_road_length = road_length
-                self._longest_road_player = p
-                logger.info(f"{p} now has longest road card")
-            return True
+        if ((self._longest_road_player is None and road_length >= 5) or
+                (self._longest_road_player is not None and road_length > self._longest_road_length)):
+            if self._longest_road_player:
+                self._longest_road_player.remove_special_card("longest road")
+                if self._longest_road_player != p:
+                    logger.info(f"{self._longest_road_player} lost longest road card")
+            p.add_special_card("longest road")
+            logger.info(f"{color} now has longest road with a road length of {road_length}")
+            self._longest_road_length = road_length
+            self._longest_road_player = p
+            logger.info(f"{p} now has longest road card")
+        if ignore_cost:
+            logger.info(f"{color} placed a road from {v1} to {v2}")
+        else:
+            logger.info(f"{color} built a road from {v1} to {v2}")
 
     def _get_road_length(self, starting_vertex: Vertex, color: str, visited: Optional[Set[Vertex]] = None) -> int:
         '''Get the longest portion of this road starting from the given vertex'''
@@ -361,36 +414,77 @@ class MapGen():
 
         return (v1, v2) in self._roads
 
-    def add_settlement(self, v: Vertex, color: str) -> bool:
-        '''Add a settlement of the given color to the map.
-        Deduct the cost if building is in a valid place.
-        Return False if cannot afford or cannot build.'''
+    def end_initial_placement(self):
+        for color in self._colors:
+            p = self._players[color]
+            if p.get_num_settlements() < 2:
+                raise Exception(f"{color} has fewer than 2 settlements")
+            if p.get_num_roads() < 2:
+                raise Exception(f"{color} has fewer than 2 roads")
+        self._state = GameState.ROLL_DICE
 
-        if v not in self.available_settlement_set:
-           return False
+    def can_place_settlement(self, v: Vertex) -> bool:
+        assert v in self._vertex_set
+        return v in self.available_settlement_set
+
+    def __can_place_road_from_direction(self, v1: Vertex, v2: Vertex, color: str) -> bool:
+        '''Only check the direction v1 -> v2'''
+
+        if self._has_road(v1, v2):
+            # logger.debug("HAS ROAD")
+            return False
+
+        player = self.get_player(color)
+        if not (player.has_road_to(v1) or player.has_settlement_at(v1)):
+            # have to build a road from either a settlement or another road
+            # logger.debug("road from nowhere?")
+            return False
+
+        if player.has_settlement_at(v1):
+            # can always build from your own settlement
+            return True
+
+        # now deal with concerning case - building from road
+        # and there is a settlement of another color at v1
+        return not(v1 in self._settlements and self._settlements[v1].color() != color)
+
+    def can_place_road(self, v1: Vertex, v2: Vertex, color: str) -> bool:
+        '''Note the rule here:
+        https://www.catan.com/faq/6508-roads-may-i-extend-interrupted-continuous-road
+        '''
+        v1, v2 = self._normalize_road(v1, v2)
+        if (v1, v2) in self._roads:
+            # logger.debug(f"road exists: {v1} - {v2}")
+            return False
+        return self.__can_place_road_from_direction(v1, v2, color) or \
+            self.__can_place_road_from_direction(v2, v1, color)
+
+    def add_settlement(self, v: Vertex, color: str) -> None:
+        '''Add a settlement of the given color to the map.
+        Deduct the cost if building is in a valid place, and if we're not in the initial placement state.
+        Raise exception if cannot afford or cannot build.'''
+
+        if not self.can_place_settlement(v):
+           raise SettlementPlacementError(f"vertex {v} is not a valid spot to build a settlement")
 
         p = self.get_player(color)
         cost = CatanConstants.building_costs["settlement"]
 
         # cannot build settlements in the middle of nowhere
         if p.get_num_settlements() >= 2 and not p.has_road_to(v):
-            return False
+            raise SettlementPlacementError(f"no road for player {color} to vertex {v}")
 
         if p.get_num_settlements() >= 2 and not p.can_deduct_resources(cost):
-            return False
+            raise SettlementPlacementError(f"player {color} cannot afford settlement")
 
-        if v in self._vertex_set:
-            if p.get_num_settlements() >= 2:
-                p.deduct_resources(cost)
+        if p.get_num_settlements() >= 2:
+            p.deduct_resources(cost)
 
-            s = Settlement(v, color)
-            self._settlements[v] = s # add to the game board
-            p.add_settlement(s) # add to player for record-keeping
-            self.cull_bad_settlement_vertices(v) # make sure nothing can be built around it
-
-            return True
-        else:
-            return False
+        s = Settlement(v, color)
+        self._settlements[v] = s # add to the game board
+        p.add_settlement(v, s) # add to player for record-keeping
+        self.cull_bad_settlement_vertices(v) # make sure nothing can be built around it
+        logger.info(f"{color} built a settlement at {v}")
 
     def get_players_on_robber_hex(self):
         '''Return a list of player colors on the hex with the robber.'''
@@ -403,27 +497,30 @@ class MapGen():
 
         return list(s)
 
-
-    def add_city(self, v: Vertex, color: str) -> bool:
+    def add_city(self, v: Vertex, color: str) -> None:
         '''Add a city of the given color to the map.
         Upgrades existing settlement.
         Deduct the cost if building is in a valid place.
-        Return False if cannot afford or cannot build.'''
+        Throw exception if cannot build the city'''
 
-        cost = CatanConstants.building_costs["city"]
         p = self.get_player(color)
 
-        if v not in self._settlements \
-        or self._settlements[v].is_city() \
-        or self._settlements[v].color() != color:
-            return False
-        elif not p.can_deduct_resources(cost):
-            return False
-        else:
-            self._settlements[v].upgrade()
-            p.deduct_resources(cost)
-            p.update_city()
-            return True
+        if v not in self._settlements:
+            raise CityUpgradeError(f"{v} not an existing settlement")
+
+        if self._settlements[v].is_city():
+            raise CityUpgradeError(f"settlement located at {v} is already a city, cannot upgrade")
+
+        if self._settlements[v].color() != color:
+            raise CityUpgradeError(f"settlement is not yours to upgrade!")
+
+        cost = CatanConstants.building_costs["city"]
+        if not p.can_deduct_resources(cost):
+            raise CityUpgradeError("You cannot afford to upgrade")
+
+        self._settlements[v].upgrade()
+        p.deduct_resources(cost)
+        p.upgrade_settlement_to_city(v)
 
     def _create_vertex_set(self) -> None:
         '''Create a set of all vertices (nodes) on the map.
@@ -444,7 +541,7 @@ class MapGen():
                         self._vertex_map[v] = []
                     self._vertex_map[v].append(hex)
 
-    def produce(self, s: Settlement, ignore_robber: bool = False) -> List[str]:
+    def produce_resources_from_settlement(self, s: Settlement, ignore_robber: bool = False) -> List[str]:
         '''Make the settlement s produce resources.
         Hex with the robber does not produce unless explicitly told (ignore_robber=True).
         Return a list of the resources produced.'''
@@ -455,38 +552,29 @@ class MapGen():
         for hex in adjacent_hex_list:
             if hex != self.get_robber_hex() or ignore_robber:
                 l.append(hex.get_resource())
-
         self._players[s.color()].add_resources(l)
         return l
 
-    def get_resources_produced(self, roll: int) -> Dict[str, List[str]]:
-        '''For the given roll, return a map of player color to resources produced.'''
-
+    def produce_resources_from_roll(self, roll: int) -> Dict[str, List[str]]:
+        '''For the given roll, return a map of player color to resources produced.
+        Also distribute those resources to relevant players'''
         d = {}  # type: Dict[str, List[str]]
-
         if roll == 7:
             return d # no resources ever produced on a seven
-
         for hex in self._resource_map[roll]:
-            r = hex.get_resource()
-
+            resource = hex.get_resource()
             for v in hex.get_vertices():
                 if v in self._settlements:
                     s = self._settlements[v]
-                    c = s.color()
-
-                    if c not in d:
-                        d[c] = []
-
+                    color = s.color()
+                    d.setdefault(color, [])
                     if s.is_city():
-                        d[c].extend([r, r])
+                        d[color].extend([resource, resource])
                     else:
-                        d[c].append(r)
-
+                        d[color].append(resource)
         # now add these resources to the relevant players
-        for p, r_list in d.items():
-            self._players[p].add_resources(r_list)
-
+        for color, r_list in d.items():
+            self._players[color].add_resources(r_list)
         return d
 
     def get_adjacent_vertices(self, v: Vertex) -> Set[Vertex]:
@@ -579,26 +667,6 @@ class MapGen():
                 self._resource_map.setdefault(num, [])
                 self._resource_map[num].append(hex)
 
-
     def get_map(self) -> List[List[Hex]]:
+        # TODO: this is very sketchy because returning the main board data structure
         return self._board
-
-    def draw(self) -> None:
-        '''Render the board.'''
-
-        pass
-
-def gen_map():
-    '''Generate a map in the map generator.
-    Print ASCII representation of the map'''
-
-    mg = MapGen()
-    mg.gen()
-    mg.prepare()
-
-    print(mg._road_set)
-
-    mg.draw_ascii()
-
-if __name__ == "__main__":
-    gen_map()

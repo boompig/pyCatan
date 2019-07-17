@@ -17,11 +17,15 @@ TODO break up the view and control portions
 
 from tkinter import RIGHT, DISABLED, W, HIDDEN, NORMAL, Tk, Frame, Button, StringVar, S, Label, Canvas
 from catan_gen import CatanConstants, CatanRenderConstants
-from game_engine import MapGen, DevelopmentCardError
+from game_engine import Game, DevelopmentCardError, SettlementPlacementError, CityUpgradeError, RoadPlacementError
 from utils import CatanUtils
+from catan_types import Vertex
 import random
 import math
 import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class GamePhases():
@@ -62,7 +66,7 @@ def get_hex_row(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist, n
 	return hexes
 
 
-def get_hex_latice(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist):
+def get_hex_lattice(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist):
 	'''Return a list of lists of hex coords.'''
 
 	# TODO move under class
@@ -267,10 +271,10 @@ class CatanApp():
 				t = "player_hand_rect_%s" % c
 				self._canvas.itemconfigure(self._canvas.find_withtag(t)[0], state=NORMAL)
 
-
 	def _next_turn(self, decr=False):
 		i=-1 if decr else 1
 		self._turn = (self._turn + i) % 4
+		self._map.next_turn()
 
 	def _get_turn(self):
 		return self._turn
@@ -293,7 +297,9 @@ class CatanApp():
 	def automate_robber_steal_picking(self):
 		'''Automate the process of picking a person to steal from, once robber has been placed.'''
 
-		self.steal_from_player(self._map.ai.get_random_robber_pick())
+		r = self._map.ai.get_random_robber_pick()
+		if r:
+			self.steal_from_player(r)
 
 	def automate_robber_movement(self):
 		'''Choose a place to put the robber.'''
@@ -309,31 +315,18 @@ class CatanApp():
 			print("AI picked same hex to put robber, skipping stealing...")
 			#self.move_robber_to_hex(self._map.get_robber_hex())
 
-	def automate_setup(self):
-		'''Create a random setup of the first two roads and settlements.'''
+	def automate_placement(self):
+		'''Create a random placement of the first two roads and settlements for each player.'''
 
-		# do all 8
 		for i in range(8):
+			# TODO the order is not quite right here
 			v = self._map.ai.get_best_settlement()
 			assert v is not None
-			self.add_settlement(None, v)
+			self.add_settlement(None, v, initial_placement=True)
 			road = self._map.ai.get_random_road_from_settlement(v)
-
 			if road is None:
 				raise Exception("ERROR! Could not find a place to put a road")
-			else:
-				v1, v2 = road
-
-			if v1[0] > v2[0]:
-				v1, v2 = v2, v1 # switch places to correspond with the way roads are indexed
-
-#			if (v1, v2) not in self._roads:
-#				print "Tried to build road from {} to {}".format(v1, v2)
-#				for k in self._roads.keys():
-#					if k[0] == v1 or k[1] == v1:
-#						print k
-
-			self.add_road(None, v1, v2)
+			self.add_road(None, road[0], road[1], initial_placement=True)
 
 	def __init__(self):
 		self._master = Tk()
@@ -366,11 +359,13 @@ class CatanApp():
 		w.pack()
 
 		# create the board
-		self._map = MapGen()
-		self._map.create_players(self.players)
-		self._map.gen()
+		hex_coord_lattice = CatanApp.get_hex_coord_lattice()
+		self._map = Game(
+			starting_color=self.players[self._turn],
+			colors=self.players,
+			hex_coord_lattice=hex_coord_lattice
+		)
 		self.set_vertices(self._map.get_map())
-		self._map.prepare()
 
 		self.draw_board(w)
 
@@ -404,7 +399,7 @@ class CatanApp():
 		self._canvas.tag_bind("robber", "<ButtonRelease-1>", self.release_robber)
 
 
-		self.automate_setup()
+		self.automate_placement()
 
 	def play_dev_card(self):
 		print("Playing dev card...")
@@ -539,7 +534,7 @@ class CatanApp():
 			#		self.post_status_note("{} must discard {} cards".format(c.title(), discard_map[c]), True)
 		else:
 			# compute produced resources
-			self._map.get_resources_produced(n)
+			self._map.produce_resources_from_roll(n)
 
 			# update player hands on screen
 			for c in self.players:
@@ -666,7 +661,7 @@ class CatanApp():
 				# note the turn hasn't changed
 				c = self.players[self._turn]
 				second_settlement =  self._map.get_player(c).get_settlement(1)
-				self._map.produce(second_settlement)
+				self._map.produce_resources_from_settlement(second_settlement)
 				self.update_hand(c)
 		elif self._state in ["first road placement", "second road placement"]:
 			for s in self._canvas.find_withtag("settlement"):
@@ -872,8 +867,8 @@ class CatanApp():
 		self._settlements = {}
 		self._roads = {}
 		self._canvas = canvas
-		for r in self._map.get_roads():
-			self.draw_road_placeholder(canvas, r[0], r[1])
+		for road in self._map.get_roads():
+			self.draw_road_placeholder(canvas, road[0], road[1])
 
 		for v in self._map.get_nodes():
 			self.draw_settlement_node(canvas, v)
@@ -886,15 +881,14 @@ class CatanApp():
 	def _get_y_offset(self, v1, v2, x_offset):
 		return self._get_road_slope(v1, v2) * x_offset
 
-	def draw_road_placeholder(self, canvas, v1, v2):
+	def draw_road_placeholder(self, canvas, v1: Vertex, v2: Vertex):
 		''' Create an invisible, clickable road placeholder between v1 and v2.
 		When clicked, it will act like a button and trigger an add_road event here.'''
 
 		tag = "road_placeholder_{}_{}_{}_{}".format(v1[0], v1[1], v2[0], v2[1])
 
 		# make sure v1 is the left-most one
-		if v1[0] > v2[0]:
-			v1, v2 = v2, v1
+		v1, v2 = self._map._normalize_road(v1, v2)
 
 		# spacing = 10
 		slope = self._get_road_slope(v1, v2)
@@ -935,14 +929,19 @@ class CatanApp():
 		f = lambda e: self.add_road(e, v1, v2)
 		canvas.tag_bind(tag, "<Button>", func=f)
 
-	def add_road(self, event, v1, v2):
+	def add_road(self, event, v1: Vertex, v2: Vertex, initial_placement: bool = False):
 		'''Build a road between two vertices in response to user click.'''
 
 		color = self.players[self._turn]
+		v1, v2 = self._map._normalize_road(v1, v2)
 
 		# here we update the model
-		if self._map.add_road(v1, v2, color):
-			print("Building {} road between {} and {}".format(color, v1, v2))
+		try:
+			if initial_placement:
+				print("Placing {} road between {} and {}...".format(color, v1, v2))
+			else:
+				print("Building {} road between {} and {}...".format(color, v1, v2))
+			self._map.add_road(v1, v2, color, ignore_cost=initial_placement)
 			tag = "road_placeholder_{}_{}_{}_{}".format(v1[0], v1[1], v2[0], v2[1])
 
 			self._canvas.itemconfigure(self._roads[(v1, v2)], fill=color, outline="black")
@@ -964,9 +963,9 @@ class CatanApp():
 			else:
 				self.change_to_state("gameplay")
 			self.update_vp(color)
-		else:
-			msg = "Road must be attached to a settlement."
-			print("Failed to build {} road between {} and {}.".format(color, v1, v2) + " " + msg)
+		except RoadPlacementError as e:
+			msg = str(e)
+			logger.error(e)
 			self.post_status_note(msg, error=True)
 
 	def cull_adjacent_settlement_nodes(self, canvas, v):
@@ -998,15 +997,18 @@ class CatanApp():
 		f = lambda e: self.add_settlement(e, v)
 		canvas.tag_bind(tag, "<Button>", func=f)
 
-	def add_settlement(self, event, v):
+	def add_settlement(self, event, v: Vertex, initial_placement: bool = False):
 		'''Add a settlement at the given vertex in response to user click.'''
 
 		color = self.players[self._get_turn()]
 
 		# reflect changes in the model
-		result = self._map.add_settlement(v, color)
-		if result:
-			print("Building {} settlement at {}".format(color, v))
+		try:
+			if initial_placement:
+				logger.info("Placing %s settlement at %s...", color, v)
+			else:
+				logger.info("Building %s settlement at %s...", color, v)
+			self._map.add_settlement(v, color)
 
 			# TODO change the color to reflect the color of the player
 			# TODO use sprites instead of ovals
@@ -1028,11 +1030,10 @@ class CatanApp():
 				self.change_to_state("second road placement")
 			else:# self._state == "additional settlement placement":
 				self.change_to_state("gameplay")
-		else:
-			print("Failed to build {} settlement at {}".format(color, v))
-			#TODO possibly other error, like not being connected to a road
-			#TODO this is a good place to use an exception
-			self.post_status_note("That building spot is too close to an existing settlement", error=True)
+		except SettlementPlacementError as e:
+			logger.error("Failed to build %s settlement at %s", color, v)
+			logger.error(str(e))
+			self.post_status_note(str(e), error=True)
 
 	def change_to_state(self, new_state):
 		'''Move from state in self._state to new_state.'''
@@ -1044,37 +1045,53 @@ class CatanApp():
 	def add_city(self, event, v, color):
 		'''Add a city on top of existing settlement in response to user click.'''
 
-		print("Building {} city at {}".format(color, v))
+		try:
+			self._map.add_city(v, color)
+			print("Building {} city at {}".format(color, v))
 
-		# destroy the oval
-		self._canvas.delete(self._settlements[v])
+			# destroy the oval
+			self._canvas.delete(self._settlements[v])
 
-		padding = CatanApp.city_radius / 2
-		tag = "city_square_{}_{}".format(*v)
+			padding = CatanApp.city_radius / 2
+			tag = "city_square_{}_{}".format(*v)
 
-		self._settlements[v] = self._canvas.create_rectangle(
-		   v[0] - padding,
-		   v[1] - padding,
-		   v[0] + padding,
-		   v[1] + padding,
-		   tags=("city", tag, "building"),
-		   fill=color, # transparent fill
-		   outline="black" # no outline
+			self._settlements[v] = self._canvas.create_rectangle(
+				v[0] - padding,
+				v[1] - padding,
+				v[0] + padding,
+				v[1] + padding,
+				tags=("city", tag, "building"),
+				fill=color, # transparent fill
+				outline="black" # no outline
+			)
+
+			# reflect changes in the model
+			self.update_vp(color)
+			self.change_to_state("gameplay")
+		except CityUpgradeError as e:
+			logger.error("Failed to upgrade %s settlement at %s", color, v)
+			logger.error(str(e))
+			self.post_status_note(str(e), error=True)
+
+	@staticmethod
+	def get_hex_coord_lattice():
+		hex_coord_lattice = get_hex_lattice(
+			CatanApp.render_start[0],
+			CatanApp.render_start[1],
+			CatanApp.minor_horiz_dist,
+			CatanApp.major_horiz_dist,
+			CatanApp.minor_vert_dist
 		)
-
-		# reflect changes in the model
-		self._map.add_city(v, color)
-		self.update_vp(color)
-		self.change_to_state("gameplay")
+		return hex_coord_lattice
 
 	@staticmethod
 	def set_vertices(map):
 		''' match the board with the generated map
 		'''
 
-		# latice AKA board
+		# lattice AKA board
 		# TODO maybe calculate vertices rather than generating them all at once
-		hex_coord_latice = get_hex_latice(
+		hex_coord_lattice = get_hex_lattice(
 			CatanApp.render_start[0],
 			CatanApp.render_start[1],
 			CatanApp.minor_horiz_dist,
@@ -1084,7 +1101,7 @@ class CatanApp():
 
 		for row_i, row in enumerate(map):
 			for col_i, col in enumerate(row):
-				col.set_vertices(hex_coord_latice[row_i][col_i])
+				col.set_vertices(hex_coord_lattice[row_i][col_i])
 
 	def key_pressed(self, event):
 		print(repr(event.char))
@@ -1111,5 +1128,7 @@ def render_map():
 
 
 if __name__ == "__main__":
+	import coloredlogs
 	logging.basicConfig(level=logging.DEBUG)
+	coloredlogs.install(level=logging.DEBUG)
 	render_map()

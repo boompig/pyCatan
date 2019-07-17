@@ -18,7 +18,8 @@ class Player():
 		# this does not include temporary victory points such as special cards
 		self._vp = 0
 
-		self._settlements = []  # type: List[Settlement]
+		self._settlements = {}  # type: Dict[Vertex, Settlement]
+		self._settlement_order = []  # type: List[Settlement]
 		self._roads = []  # type: List[Edge]
 
 		self._dev_cards = {}  #type: Dict[str, int]
@@ -54,16 +55,21 @@ class Player():
 			#	del(self._resources[r])
 		return True
 
-	def add_settlement(self, s: Settlement) -> None:
+	def add_settlement(self, v: Vertex, s: Settlement) -> None:
 		'''Add the given settlement to the list of settlements for this player.'''
 
-		self._settlements.append(s)
+		self._settlements[v] = s
+		self._settlement_order.append(s)
 		self._vp += 1
 
-	def update_city(self) -> None:
+	def get_settlement(self, i: int) -> Settlement:
+		return self._settlement_order[i]
+
+	def upgrade_settlement_to_city(self, vertex: Vertex) -> None:
 		'''Update a city of this player.
 		Used to update VP count.'''
 
+		assert self.has_settlement_at(vertex)
 		self._vp += 1
 
 	def add_road(self, v1: Vertex, v2: Vertex) -> None:
@@ -81,13 +87,8 @@ class Player():
 
 		return len(self._settlements)
 
-	def get_settlement(self, i: int) -> Settlement:
-		'''Return settlement at the given index.'''
-
-		if i >= len(self._settlements):
-			raise Exception(f"No settlement with index {i}")
-		else:
-			return self._settlements[i]
+	def get_settlements(self) -> List[Settlement]:
+		return self._settlement_order
 
 	def add_resources(self, resource_list: List[str]) -> None:
 		'''Collect resources.'''
@@ -183,6 +184,16 @@ class Player():
 			if v in road:
 				return True
 		return False
+
+	def has_settlement_at(self, v: Vertex) -> bool:
+		return v in self._settlements
+
+	def get_road_vertices(self) -> Set[Vertex]:
+		vs = set([])
+		for road in self._roads:
+			vs.add(road[0])
+			vs.add(road[1])
+		return vs
 
 
 if __name__ == "__main__":
