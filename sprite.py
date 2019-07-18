@@ -144,7 +144,6 @@ def rescale(canvas, offset, top, v):
 if __name__ == "__main__":
 	offset = 50
 	top = 300
-	d = {}
 
 	# create a root
 	master = Tk()
@@ -160,7 +159,7 @@ if __name__ == "__main__":
 	#s.pack()
 
 	#draw_settlement(w, (offset, offset), top, settlement_constants)
-	draw_city(w, (offset, offset), top, d)
+	draw_city(w, (offset, offset), top, {})
 
 	# start main loop
 	master.mainloop()
