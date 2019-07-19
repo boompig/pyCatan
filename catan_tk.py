@@ -20,19 +20,13 @@ from catan_gen import CatanConstants, CatanRenderConstants
 from game_engine import Game, DevelopmentCardError, SettlementPlacementError, CityUpgradeError, RoadPlacementError, GameState
 from utils import CatanUtils
 from catan_types import Vertex
-import random
 import math
 import logging
+from smart_placement_ai import SmartPlacementAI
+from typing import Dict
 
 
 logger = logging.getLogger(__name__)
-
-
-class GamePhases():
-	'''TODO for now, this is unused.'''
-
-	first_settlement = "Place a settlement"
-	first_road = "Place a road"
 
 
 def get_hex_coords(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist):
@@ -296,15 +290,16 @@ class CatanApp():
 	def automate_robber_steal_picking(self):
 		'''Automate the process of picking a person to steal from, once robber has been placed.'''
 
-		r = self._map.ai.get_random_robber_pick()
-		if r:
-			self.steal_from_player(r)
+		ai = self._ais[self._map.get_current_color()]
+		color = ai.get_robber_pick(self._map)
+		self.steal_from_player(color)
 
 	def automate_robber_movement(self):
 		'''Choose a place to put the robber.'''
 
 		color = self.players[self._turn]
-		row, col = self._map.ai.get_smart_robber_placement(color)
+		ai = self._ais[color]
+		row, col = ai.get_robber_placement(self._map, color)
 		#destination_hex_sprite = self._canvas.find_withtag("hex_{}_{}".format(row, col))
 		model_hex = self._map._board[row][col]
 
@@ -318,12 +313,11 @@ class CatanApp():
 		'''Create a random placement of the first two roads and settlements for each player.'''
 
 		while self._map.get_state() == GameState.INITIAL_PLACEMENT:
-			v = self._map.ai.get_best_settlement()
+			ai = self._ais[self._map.get_current_color()]
+			v = ai.get_settlement_placement(self._map)
 			assert v is not None
 			self.add_settlement(None, v, initial_placement=True)
-			road = self._map.ai.get_random_road_from_settlement(v)
-			if road is None:
-				raise Exception("ERROR! Could not find a place to put a road")
+			road = ai.get_road_placement(self._map, v)
 			assert road[0] == v or road[1] == v
 			self.add_road(None, road[0], road[1], initial_placement=True)
 			self.change_status_turn()
@@ -401,6 +395,9 @@ class CatanApp():
 		self._canvas.tag_bind("robber", "<B1-Motion>", self.move_robber)
 		self._canvas.tag_bind("robber", "<ButtonRelease-1>", self.release_robber)
 
+		self._ais = {}  # type: Dict[str, SmartPlacementAI]
+		for color in self.players:
+			self._ais[color] = SmartPlacementAI(self._map)
 
 		self.automate_placement()
 

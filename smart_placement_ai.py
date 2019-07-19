@@ -1,0 +1,133 @@
+from ai import AI
+from game_engine import Game
+from typing import Tuple, Dict, List
+import random
+from hex import Hex
+from catan_types import Vertex, Edge
+
+
+class SmartPlacementAI(AI):
+
+	def __init__(self, game: Game) -> None:
+		super().__init__()
+		self._vertex_probs = {}  # type: Dict[int, List[Vertex]]
+		self._prepare(game)
+
+	def _prepare(self, game: Game) -> None:
+		'''Prepare the AI by letting it calculate most probable settlements.'''
+
+		for v in game.get_nodes():
+			n = self._eval_vertex_value(game, v)
+			if n not in self._vertex_probs:
+				self._vertex_probs[n] = []
+			self._vertex_probs[n].append(v)
+
+	def _eval_vertex_value(self, game: Game, v: Tuple[int, int]) -> int:
+		'''Evaluate the value of the given vertex.
+		This is done by adding all the dots of the adjacent hexes.
+		This is a rough measure of probability.'''
+
+		n = 0
+
+		for hex in game._vertex_map[v]:
+			n += hex.get_num_dots()
+
+		return n
+
+	def get_road_placement(self, game: Game, settlement_vertex: Vertex) -> Edge:
+		'''Return a random road stemming from settlement located at v.'''
+
+		adjacent_v_set = game.get_adjacent_vertices(settlement_vertex)
+		random.shuffle(list(adjacent_v_set))
+
+		for v2 in adjacent_v_set:
+			if not game.has_road(settlement_vertex, v2):
+			   return (settlement_vertex, v2) # the road was built
+
+		raise Exception("this is bad")
+
+	def _eval_hex_robber_score(self, game: Game, hex: Hex, color: str) -> int:
+		'''Return the robber score for this hex.
+		Hex gets a point value of 0 if `color` is on it.
+		Neutral hexes get a point-value of 1 for tie-break.
+		Also 0 is the previous robber hex.'''
+
+		score = 1 # neutral hexes get 1 point
+
+		if hex == game.get_robber_hex():
+			return 0
+
+		for v in hex.get_vertices():
+			if v in game._settlements:
+				s = game._settlements[v]
+
+				if s.color() == color:
+					return 0 # no points for hexes with same color as choosing player
+				elif s.is_city():
+					score += 2 * hex.get_num_dots()
+				else :
+					score += 1 * hex.get_num_dots()
+
+		return score
+
+	def get_robber_pick(self, game: Game) -> str:
+		'''Return a color to steal from. This is random.'''
+
+		l = []
+
+		for v in game.get_robber_hex().get_vertices():
+			if v in game._settlements:
+				l.append(game._settlements[v].color())
+		if l == []:
+			raise Exception("this is bad")
+		else:
+			return random.choice(l)
+
+	def get_robber_placement(self, game: Game, color: str) -> Vertex:
+		'''Return the *position* of the hex on which to place the robber.
+		Should be a high-producing hex with no settlements/cities by this player.
+		Color is the color of the player placing the robber.'''
+
+		max_score = 0
+		best_hex = None
+
+		for row_i, row in enumerate(game._board):
+			for col, hex in enumerate(row):
+				score = self._eval_hex_robber_score(game, hex, color)
+				if score > max_score:
+					#best_hex = hex
+					best_hex = (row_i, col)
+					max_score = score
+		assert best_hex is not None
+		return best_hex
+
+	def get_settlement_placement(self, game: Game) -> Vertex:
+		'''Return the settlement with the highest combined prob. of generating a resource.'''
+
+		sorted_vals = list(self._vertex_probs.keys())
+		assert sorted_vals != []
+		sorted_vals.sort(reverse=True)
+		s = game.available_settlement_set
+
+		# this has to go through all of them...
+		for val in sorted_vals:
+			for v in self._vertex_probs[val]:
+				if v in s:
+					return v
+			# all of these are now off the table
+			del(self._vertex_probs[val])
+		raise Exception("this is bad")
+
+	def get_robber_discard(self, game: Game, color: str, num_discard: int) -> List[str]:
+		'''Discard random cards from the player's hand.
+		Return those cards.'''
+
+		player = game.get_player(color)
+		hand = player.get_hand()[:]
+		gone_list = []
+
+		for i in range(num_discard):
+			gone_list.append(hand.pop())
+
+		player.deduct_resources(gone_list)
+		return gone_list

@@ -4,12 +4,13 @@ from typing import List, Optional, Set, Iterator
 from catan_types import Vertex, Edge
 from catan_gen import CatanConstants
 import logging
+from ai import AI
 
 
 logger = logging.getLogger(__name__)
 
 
-class TestAI:
+class RandomAI(AI):
 	def __init__(self, color: str):
 		self.color = color
 

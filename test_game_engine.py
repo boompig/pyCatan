@@ -2,7 +2,7 @@ from game_engine import Game, GameState
 import random
 from catan_tk import CatanApp
 from typing import List
-from ai_for_testing import TestAI
+from random_ai import RandomAI
 import math
 
 
@@ -31,7 +31,7 @@ def _automate_placement(ais, game: Game, colors: List[str]):
 def test_game_ends():
 	# predictable tests
 	random.seed(42)
-	ais = { color: TestAI(color) for color in COLORS }
+	ais = { color: RandomAI(color) for color in COLORS }
 	game = Game(
 		starting_color="red",
 		colors=COLORS,
@@ -94,7 +94,7 @@ def test_initial_placement():
 		LATTICE
 	)
 	l = []
-	ais = { color: TestAI(color) for color in COLORS }
+	ais = { color: RandomAI(color) for color in COLORS }
 	while game.get_state() == GameState.INITIAL_PLACEMENT:
 		color = game.get_current_color()
 		l.append(color)

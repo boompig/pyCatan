@@ -8,7 +8,6 @@ from catan_gen import CatanConstants
 from hex import Hex
 from player import Player
 from settlement import Settlement
-from ai import AI
 from typing import Dict, List, Set, Optional
 from catan_types import Vertex, Edge
 import logging
@@ -52,7 +51,6 @@ class Game():
                  hex_coord_lattice) -> None:
         self._decr_set = set([1, 2, 4, 6])
         self._players = {}  # type: Dict[str, Player]
-        self.ai = AI(self)
         self._dev_card_deck = []  # type: List[str]
         # list of rows, where each row is a list of Hex tiles
         self._board = []  # type: List[List[Hex]]
@@ -318,8 +316,6 @@ class Game():
         self._robber_hex = self._desert_pos
         #self._robber_hex = self._resource_map["desert"][0]
 
-        self.ai.prepare()
-
     def _find_desert_hex(self) -> None:
         '''Find the desert hex and set self._desert_pos to its position in the form (row, col).'''
 
@@ -519,7 +515,7 @@ class Game():
             logger.info(f"{color} built a settlement at {v}")
         if initial_placement and p.get_num_settlements() == 2:
             logger.info("Producing resources from second settlement...")
-            r = self.produce_resources_from_settlement(s)
+            self.produce_resources_from_settlement(s)
 
     def get_players_on_robber_hex(self):
         '''Return a list of player colors on the hex with the robber.'''
