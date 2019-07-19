@@ -17,7 +17,7 @@ TODO break up the view and control portions
 
 from tkinter import RIGHT, DISABLED, W, HIDDEN, NORMAL, Tk, Frame, Button, StringVar, S, Label, Canvas
 from catan_gen import CatanConstants, CatanRenderConstants
-from game_engine import Game, DevelopmentCardError, SettlementPlacementError, CityUpgradeError, RoadPlacementError
+from game_engine import Game, DevelopmentCardError, SettlementPlacementError, CityUpgradeError, RoadPlacementError, GameState
 from utils import CatanUtils
 from catan_types import Vertex
 import random
@@ -271,10 +271,9 @@ class CatanApp():
 				t = "player_hand_rect_%s" % c
 				self._canvas.itemconfigure(self._canvas.find_withtag(t)[0], state=NORMAL)
 
-	def _next_turn(self, decr=False):
-		i=-1 if decr else 1
-		self._turn = (self._turn + i) % 4
+	def _next_turn(self):
 		self._map.next_turn()
+		self._turn = self._map.get_turn()
 
 	def _get_turn(self):
 		return self._turn
@@ -318,15 +317,19 @@ class CatanApp():
 	def automate_placement(self):
 		'''Create a random placement of the first two roads and settlements for each player.'''
 
-		for i in range(8):
-			# TODO the order is not quite right here
+		while self._map.get_state() == GameState.INITIAL_PLACEMENT:
 			v = self._map.ai.get_best_settlement()
 			assert v is not None
 			self.add_settlement(None, v, initial_placement=True)
 			road = self._map.ai.get_random_road_from_settlement(v)
 			if road is None:
 				raise Exception("ERROR! Could not find a place to put a road")
+			assert road[0] == v or road[1] == v
 			self.add_road(None, road[0], road[1], initial_placement=True)
+			self.change_status_turn()
+
+		self.change_to_state("gameplay")
+		self.roll(change_turn=False)
 
 	def __init__(self):
 		self._master = Tk()
@@ -510,10 +513,7 @@ class CatanApp():
 		if change_turn:
 			self.change_status_turn()
 
-		# roll the dice
-		r1 = random.randint(1, 6)
-		r2 = random.randint(1, 6)
-		n = r1 + r2
+		n = self._map.roll_dice()
 
 		# display dice roll
 		self._roll_var.set("Last roll: {}".format(n))
@@ -651,27 +651,7 @@ class CatanApp():
 	def act_on_end_state(self):
 		'''Perform state exit actions.'''
 
-		if self._state in ["first settlement placement", "second settlement placement"]:
-			for road in self._canvas.find_withtag("road"):
-				self._canvas.itemconfigure(road, state=NORMAL)
-			for city in self._canvas.find_withtag("city"):
-				self._canvas.itemconfigure(city, state=NORMAL)
-
-			if "second" in self._state:
-				# note the turn hasn't changed
-				c = self.players[self._turn]
-				second_settlement =  self._map.get_player(c).get_settlement(1)
-				self._map.produce_resources_from_settlement(second_settlement)
-				self.update_hand(c)
-		elif self._state in ["first road placement", "second road placement"]:
-			for s in self._canvas.find_withtag("settlement"):
-				self._canvas.itemconfigure(s, state=NORMAL)
-			for city in self._canvas.find_withtag("city"):
-				self._canvas.itemconfigure(city, state=NORMAL)
-
-			if "second" in self._state and self._turn == 0:
-				self.roll(False)
-		elif self._state == "gameplay":
+		if self._state == "gameplay":
 			# re-enable all buildings
 			for b in self._canvas.find_withtag("building"):
 				self._canvas.itemconfigure(b, state=NORMAL)
@@ -802,7 +782,7 @@ class CatanApp():
 		self._canvas.create_text(
 			770,
 			120 * (i + 1),
-			text="NO  DEV CARDS",
+			text="NO DEV CARDS",
 			width = 150,
 			justify=RIGHT,
 			tag="dev_area_section_%s" % color
@@ -853,8 +833,9 @@ class CatanApp():
 		self.post_status_note("Stole from {}".format(from_player))
 		self.change_to_state("gameplay")
 
-	def change_status_turn(self, decr=False):
-		self._next_turn(decr)
+	def change_status_turn(self):
+		# '''Change turn
+		self._next_turn()
 		self._canvas.itemconfigure(self._status_rect, fill=self.players[self._turn])
 
 	def draw_board(self, canvas):
@@ -932,37 +913,25 @@ class CatanApp():
 	def add_road(self, event, v1: Vertex, v2: Vertex, initial_placement: bool = False):
 		'''Build a road between two vertices in response to user click.'''
 
-		color = self.players[self._turn]
+		color = self._map.get_current_color()
 		v1, v2 = self._map._normalize_road(v1, v2)
 
 		# here we update the model
 		try:
 			if initial_placement:
-				print("Placing {} road between {} and {}...".format(color, v1, v2))
+				logger.info("Placing {} road between {} and {}...".format(color, v1, v2))
 			else:
-				print("Building {} road between {} and {}...".format(color, v1, v2))
-			self._map.add_road(v1, v2, color, ignore_cost=initial_placement)
+				logger.info("Building {} road between {} and {}...".format(color, v1, v2))
+			self._map.add_road(v1, v2, color, initial_placement=initial_placement)
 			tag = "road_placeholder_{}_{}_{}_{}".format(v1[0], v1[1], v2[0], v2[1])
 
 			self._canvas.itemconfigure(self._roads[(v1, v2)], fill=color, outline="black")
 			self._canvas.dtag(self._roads[(v1, v2)], tag)
 			self._canvas.dtag(self._roads[(v1, v2)], "road_placeholder")
 
-			if self._state == "first road placement":
-				if self._turn == 3:
-					self.change_to_state("second settlement placement")
-				else:
-					self.change_status_turn()
-					self.change_to_state("first settlement placement")
-			elif self._state == "second road placement":
-				if self._turn == 0:
-					self.change_to_state("gameplay")
-				else:
-					self.change_status_turn(True)
-					self.change_to_state("second settlement placement")
-			else:
-				self.change_to_state("gameplay")
 			self.update_vp(color)
+
+			self.change_to_state("gameplay")
 		except RoadPlacementError as e:
 			msg = str(e)
 			logger.error(e)
@@ -1000,7 +969,7 @@ class CatanApp():
 	def add_settlement(self, event, v: Vertex, initial_placement: bool = False):
 		'''Add a settlement at the given vertex in response to user click.'''
 
-		color = self.players[self._get_turn()]
+		color = self._map.get_current_color()
 
 		# reflect changes in the model
 		try:
@@ -1008,7 +977,7 @@ class CatanApp():
 				logger.info("Placing %s settlement at %s...", color, v)
 			else:
 				logger.info("Building %s settlement at %s...", color, v)
-			self._map.add_settlement(v, color)
+			self._map.add_settlement(v, color, initial_placement=initial_placement)
 
 			# TODO change the color to reflect the color of the player
 			# TODO use sprites instead of ovals
@@ -1024,12 +993,7 @@ class CatanApp():
 
 			self.update_vp(color)
 
-			if self._state == "first settlement placement":
-				self.change_to_state("first road placement")
-			elif self._state == "second settlement placement":
-				self.change_to_state("second road placement")
-			else:# self._state == "additional settlement placement":
-				self.change_to_state("gameplay")
+			self.change_to_state("gameplay")
 		except SettlementPlacementError as e:
 			logger.error("Failed to build %s settlement at %s", color, v)
 			logger.error(str(e))

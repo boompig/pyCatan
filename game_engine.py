@@ -70,6 +70,9 @@ class Game():
         self._colors = colors
         self._state = GameState.INITIAL_PLACEMENT
         self._hex_coord_lattice = hex_coord_lattice
+        # placement goes to the last player, then comes back
+        # this variable keeps track of which way we're going
+        self._placement_count = 0
 
         # where do the special cards reside?
         self._longest_road_player = None  # type: Optional[Player]
@@ -111,11 +114,12 @@ class Game():
         '''
         Roll the dice and distribute resources based on the outcome
         It is up to the caller to handle a 7 (robber and discard events)'''
-        assert self._state == GameState.ROLL_DICE
+        assert self._state == GameState.ROLL_DICE, f"Current state is {str(self._state)}"
         r1 = random.randint(1, 6)
         r2 = random.randint(1, 6)
         roll = r1 + r2
         self.produce_resources_from_roll(roll)
+        self._state = GameState.GAMEPLAY
         return roll
 
     def check_game_over(self):
@@ -127,9 +131,30 @@ class Game():
 
     def next_turn(self) -> None:
         '''Roll over to the next turn'''
-        assert self._state != GameState.GAMEPLAY
-        self.check_game_over()
-        self._turn = (self._turn + 1) % len(self._colors)
+        assert self._state != GameState.ROLL_DICE, "Cannot end turn before rollling dice"
+        if self._state == GameState.GAMEPLAY:
+            self.check_game_over()
+            self._turn = (self._turn + 1) % len(self._colors)
+            self._state = GameState.ROLL_DICE
+        elif self._state == GameState.INITIAL_PLACEMENT:
+            placement_dir_forward = self._placement_count < len(self._colors)
+            if self._placement_count + 1 == len(self._colors):
+                # don't change the turn
+                # going the other way now
+                pass
+            elif self._placement_count + 1 == 2 * len(self._colors):
+                # don't change the turn
+                # we're done placement
+                pass
+            elif placement_dir_forward:
+                self._turn = (self._turn + 1) % len(self._colors)
+            else:
+                self._turn = (self._turn - 1 + len(self._colors)) % len(self._colors)
+            self._placement_count += 1
+            logger.debug("placement count=%d, next turn = %s" % (self._placement_count, self._colors[self._turn]))
+
+            if self._placement_count == 2 * len(self._colors):
+                self.__end_initial_placement()
 
     def get_current_color(self) -> str:
         return self._colors[self._turn]
@@ -286,6 +311,7 @@ class Game():
 
         # this is the available set of nodes on which settlements can be built
         self.available_settlement_set = self._vertex_set.copy()
+        assert len(self.available_settlement_set) > 0
 
         # place the robber on the desert hex
         self._find_desert_hex()
@@ -336,7 +362,7 @@ class Game():
         else:
             return (v1, v2)
 
-    def add_road(self, v1: Vertex, v2: Vertex, color: str, ignore_cost: bool = False) -> None:
+    def add_road(self, v1: Vertex, v2: Vertex, color: str, initial_placement: bool = False) -> None:
         '''Add a road of the given color to the map. Charge the player for it.
         Rules:
         - (v1, v2) is not an existing road
@@ -353,7 +379,7 @@ class Game():
         p = self.get_player(color)
         cost = CatanConstants.building_costs["road"]
 
-        if not ignore_cost and not p.can_deduct_resources(cost):
+        if not initial_placement and not p.can_deduct_resources(cost):
             raise RoadPlacementError("cannot afford road")
 
         self._roads.add((v1, v2))
@@ -363,7 +389,7 @@ class Game():
         # now figure out whether this makes this road the longest road
 
         road_length = self._get_road_length(v1, color)
-        if not ignore_cost:
+        if not initial_placement:
             logger.debug(f"{color}'s new road has length {road_length}")
         if ((self._longest_road_player is None and road_length >= 5) or
                 (self._longest_road_player is not None and road_length > self._longest_road_length)):
@@ -376,7 +402,7 @@ class Game():
             self._longest_road_length = road_length
             self._longest_road_player = p
             logger.info(f"{p} now has longest road card")
-        if ignore_cost:
+        if initial_placement:
             logger.info(f"{color} placed a road from {v1} to {v2}")
         else:
             logger.info(f"{color} built a road from {v1} to {v2}")
@@ -385,15 +411,15 @@ class Game():
         '''Get the longest portion of this road starting from the given vertex'''
         if visited is None:
             visited = set([])
+        visited.add(starting_vertex)
         lengths = []
         # first, find all the adjacent vertices
         player = self.get_player(color)
-        visited2 = visited.copy()
-        visited2.add(starting_vertex)
         for v2 in self.get_adjacent_vertices(starting_vertex):
             if v2 in visited:
                 continue
             if player.has_road_to(v2):
+                visited2 = visited.copy()
                 lengths.append(1 + self._get_road_length(v2, color, visited2))
 
         # highest lengths first
@@ -414,13 +440,16 @@ class Game():
 
         return (v1, v2) in self._roads
 
-    def end_initial_placement(self):
+    def __end_initial_placement(self):
+        '''Verify that everything has been placed and transition to another state'''
+        assert self._placement_count == len(self._colors) * 2
         for color in self._colors:
             p = self._players[color]
             if p.get_num_settlements() < 2:
                 raise Exception(f"{color} has fewer than 2 settlements")
             if p.get_num_roads() < 2:
                 raise Exception(f"{color} has fewer than 2 roads")
+        logger.debug("Initial placement succeeded, moving to new state")
         self._state = GameState.ROLL_DICE
 
     def can_place_settlement(self, v: Vertex) -> bool:
@@ -459,7 +488,7 @@ class Game():
         return self.__can_place_road_from_direction(v1, v2, color) or \
             self.__can_place_road_from_direction(v2, v1, color)
 
-    def add_settlement(self, v: Vertex, color: str) -> None:
+    def add_settlement(self, v: Vertex, color: str, initial_placement: bool = False) -> None:
         '''Add a settlement of the given color to the map.
         Deduct the cost if building is in a valid place, and if we're not in the initial placement state.
         Raise exception if cannot afford or cannot build.'''
@@ -471,20 +500,26 @@ class Game():
         cost = CatanConstants.building_costs["settlement"]
 
         # cannot build settlements in the middle of nowhere
-        if p.get_num_settlements() >= 2 and not p.has_road_to(v):
+        if not initial_placement and not p.has_road_to(v):
             raise SettlementPlacementError(f"no road for player {color} to vertex {v}")
 
-        if p.get_num_settlements() >= 2 and not p.can_deduct_resources(cost):
+        if not initial_placement and not p.can_deduct_resources(cost):
             raise SettlementPlacementError(f"player {color} cannot afford settlement")
 
-        if p.get_num_settlements() >= 2:
+        if not initial_placement:
             p.deduct_resources(cost)
 
         s = Settlement(v, color)
         self._settlements[v] = s # add to the game board
         p.add_settlement(v, s) # add to player for record-keeping
         self.cull_bad_settlement_vertices(v) # make sure nothing can be built around it
-        logger.info(f"{color} built a settlement at {v}")
+        if initial_placement:
+            logger.info(f"{color} placed a settlement at {v}")
+        else:
+            logger.info(f"{color} built a settlement at {v}")
+        if initial_placement and p.get_num_settlements() == 2:
+            logger.info("Producing resources from second settlement...")
+            r = self.produce_resources_from_settlement(s)
 
     def get_players_on_robber_hex(self):
         '''Return a list of player colors on the hex with the robber.'''
@@ -670,3 +705,9 @@ class Game():
     def get_map(self) -> List[List[Hex]]:
         # TODO: this is very sketchy because returning the main board data structure
         return self._board
+
+    def get_state(self) -> GameState:
+        return self._state
+
+    def get_turn(self) -> int:
+        return self._turn
