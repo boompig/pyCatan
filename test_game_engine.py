@@ -113,7 +113,6 @@ def test_initial_placement():
 	assert l == expected
 
 
-
 if __name__ == "__main__":
 	import logging
 	import coloredlogs

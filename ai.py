@@ -13,5 +13,5 @@ class AI:
     def get_structure_to_buy(self, game: Game) -> Optional[dict]:
         raise NotImplementedError("implement in subclass")
 
-    def get_robber_discard(self, game: Game, color: str, num_discard: int) -> List[str]:
+    def robber_discard(self, game: Game, color: str) -> List[str]:
         raise NotImplementedError("implement in subclass")

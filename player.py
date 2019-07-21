@@ -172,7 +172,7 @@ class Player():
 
 		return self._dev_cards
 
-	def get_hand(self):
+	def get_hand(self) -> Dict[str, int]:
 		'''Return the player's hand.'''
 
 		return self._resources

@@ -402,7 +402,7 @@ class CatanApp():
 		self.automate_placement()
 
 	def play_dev_card(self):
-		print("Playing dev card...")
+		raise NotImplementedError()
 
 	def buy_development_card(self):
 		'''User-triggered action to buy a development card.'''
@@ -517,12 +517,17 @@ class CatanApp():
 		self.post_status_note("Rolled %d" % n)
 
 		if n == 7:
-			# TODO discard cards first
+			for color in self.players:
+				ai = self._ais[color]
+				player = self._map.get_player(color)
+				# AI responsible for discarding cards
+				cards = ai.robber_discard(self._map, color)
+				if cards != []:
+					logger.debug("%s discarded %s due to robber, now have %d cards",
+								color, cards, player.get_num_resources())
+				assert player.get_num_resources() <= 7
 
-			#
 			self.change_to_state("move robber")
-			# starting from this player, each player must discard half their hand
-			#discard_map = self._map.robber_discard()
 
 			#for i in range(4):
 			#	c = self.players[self._turn]

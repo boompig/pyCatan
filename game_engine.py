@@ -637,17 +637,6 @@ class Game():
     def get_roads(self) -> Set[Edge]:
         return self._road_set
 
-    def robber_discard(self):
-        '''Return map of color to number of resources each player must discard.'''
-
-        d = {}
-
-        for c, p in self._players.items():
-            if p.get_num_resources() > 7:
-                d[c] = p.get_num_resources() // 2 # explicit integer division
-
-        return d
-
     def _get_hex_at_coords(self, row: int, col: int) -> Hex:
         '''Return hex object at the given coordinates.'''
 

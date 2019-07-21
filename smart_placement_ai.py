@@ -4,6 +4,10 @@ from typing import Tuple, Dict, List
 import random
 from hex import Hex
 from catan_types import Vertex, Edge
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class SmartPlacementAI(AI):
@@ -118,16 +122,21 @@ class SmartPlacementAI(AI):
 			del(self._vertex_probs[val])
 		raise Exception("this is bad")
 
-	def get_robber_discard(self, game: Game, color: str, num_discard: int) -> List[str]:
+	def robber_discard(self, game: Game, color: str) -> List[str]:
 		'''Discard random cards from the player's hand.
-		Return those cards.'''
+		Return those cards.
+		Right now discards random cards'''
 
 		player = game.get_player(color)
-		hand = player.get_hand()[:]
+		n = player.get_num_resources()
 		gone_list = []
-
-		for i in range(num_discard):
-			gone_list.append(hand.pop())
-
-		player.deduct_resources(gone_list)
+		while n > 7:
+			# get the available resources
+			l = []
+			for r, count in player.get_hand().items():
+				l.extend([r] * count)
+			r = random.choice(l)
+			player.deduct_resources([r])
+			gone_list.append(r)
+			n -= 1
 		return gone_list
