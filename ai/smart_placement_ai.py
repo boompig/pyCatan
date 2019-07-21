@@ -173,21 +173,50 @@ class SmartPlacementAI(AI):
 				playable_cards.extend([card] * num)
 		return playable_cards
 
+	def __get_random_resource(self) -> str:
+		l = list(CatanConstants.resource_distribution.keys())
+		return random.choice(l)
+
 	def do_turn(self, game: Game) -> None:
 		player = game.get_player(self._color)
 
-		'''
 		playable_cards = self.__get_playable_cards(game)
 		if playable_cards != []:
-			card = random.choice(playable_cards)
-			d = {
-				"play": "development card",
-				"card": card
-			}
+			card = playable_cards[0]
 			if card == "monopoly":
-				d["target_resource"]
-				# get the resource
-		'''
+				r = self.__get_random_resource()
+				game.play_development_card(
+					self._color,
+					card,
+					{"target_resource": r}
+				)
+			elif card == "knight":
+				colors = game.get_colors()
+				colors.remove(self._color)
+				target_color = random.choice(colors)
+				game.play_development_card(
+					self._color,
+					card,
+					{"target_color": target_color}
+				)
+			elif card == "year of plenty":
+				r1 = self.__get_random_resource()
+				r2 = self.__get_random_resource()
+				game.play_development_card(
+					self._color,
+					card,
+					{"resources": [r1, r2]}
+				)
+			elif card == "road building":
+				places = [edge for edge in self.__get_available_road_placements(game)]
+				roads = random.sample(places, 2)
+				game.play_development_card(
+					self._color,
+					card,
+					{"roads": roads}
+				)
+			else:
+				raise NotImplementedError()
 
 		# preference for development cards
 		cost = CatanConstants.development_card_cost

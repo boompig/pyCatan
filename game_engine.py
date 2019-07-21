@@ -173,6 +173,14 @@ class Game():
     def __play_knight_card(self, player_color: str, target_color: str) -> None:
         self.robber_steal(target_color, player_color)
 
+    def __play_year_of_plenty_card(self, player_color: str, resources: List[str]) -> None:
+        player = self.get_player(player_color)
+        player.add_resources(resources)
+
+    def __play_road_building_card(self, player_color: str, roads: List[Edge]) -> None:
+        for road in roads:
+            self.add_road(road[0], road[1], player_color, initial_placement=False)
+
     def play_development_card(self, color: str, card: str, params: dict):
         '''Player with given color plays given card. Process effects.'''
 
@@ -182,8 +190,12 @@ class Game():
             self.__play_monopoly_card(color, **params)
         elif card == "knight":
             self.__play_knight_card(color, **params)
+        elif card == "year of plenty":
+            self.__play_year_of_plenty_card(color, **params)
+        elif card == "road building":
+            self.__play_road_building_card(color, **params)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(card)
 
     def get_player_vp(self, color: str) -> int:
         '''Return number of victory points for player of given color.'''
@@ -719,3 +731,7 @@ class Game():
 
     def get_turn(self) -> int:
         return self._turn
+
+    def get_colors(self) -> List[str]:
+        l = self._colors.copy()
+        return l
