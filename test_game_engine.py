@@ -2,7 +2,8 @@ from game_engine import Game, GameState
 import random
 from catan_tk import CatanApp
 from typing import List
-from random_ai import RandomAI
+from ai.dummy_ai import DummyAI
+from ai.smart_placement_ai import SmartPlacementAI
 import math
 
 
@@ -16,6 +17,8 @@ def floor(x: float):
 
 def _automate_placement(ais, game: Game, colors: List[str]):
 	l = []
+	MAX_TRIES = 100
+	tries = 0
 	while game.get_state() == GameState.INITIAL_PLACEMENT:
 		color = game.get_current_color()
 		l.append(color)
@@ -26,17 +29,26 @@ def _automate_placement(ais, game: Game, colors: List[str]):
 		game.add_road(road[0], road[1], color, initial_placement=True)
 		game.next_turn()
 		assert len(l) <= len(colors) * 2
+		# this is just to make sure that we don't stay here forever
+		tries += 1
+		assert tries < MAX_TRIES
 
 
 def test_game_ends():
 	# predictable tests
 	random.seed(42)
-	ais = { color: RandomAI(color) for color in COLORS }
 	game = Game(
 		starting_color="red",
 		colors=COLORS,
 		hex_coord_lattice=LATTICE
 	)
+	ais = {}
+	for i, color in enumerate(COLORS):
+		if i == 0:
+			ais[color] = SmartPlacementAI(color, game)
+		else:
+			ais[color] = DummyAI(color)
+
 	MAX_TURN = 10000
 	_automate_placement(ais, game, COLORS)
 	print("initial placement finished")
@@ -57,7 +69,7 @@ def test_game_ends():
 
 		stop = False
 		while not stop:
-			structure =  ai.get_structure_to_buy(game)
+			structure = ai.get_structure_to_buy(game)
 			# print(structure)
 			if structure:
 				last_move_turn = turn
@@ -84,6 +96,7 @@ def test_game_ends():
 
 	print("last made a move on turn %s" % last_move_turn)
 	assert turn < MAX_TURN
+	assert game.is_game_over
 
 
 def test_initial_placement():
@@ -94,7 +107,7 @@ def test_initial_placement():
 		LATTICE
 	)
 	l = []
-	ais = { color: RandomAI(color) for color in COLORS }
+	ais = { color: DummyAI(color) for color in COLORS }
 	while game.get_state() == GameState.INITIAL_PLACEMENT:
 		color = game.get_current_color()
 		l.append(color)
@@ -111,6 +124,27 @@ def test_initial_placement():
 	for color in reversed(COLORS):
 		expected.append(color)
 	assert l == expected
+
+
+def test_play_knight_card():
+	random.seed(42)
+	game = Game(
+		"orange",
+		COLORS,
+		LATTICE
+	)
+	ais = { color: DummyAI(color) for color in COLORS }
+	_automate_placement(ais, game, COLORS)
+	# give the first
+	player = game.get_player("orange")
+	player.add_development_card("knight")
+	red_count = game.get_player("red").get_num_resources()
+	orange_count = game.get_player("orange").get_num_resources()
+	game.play_development_card("orange", "knight", {
+		"target_color": "red"
+	})
+	assert game.get_player("red").get_num_resources() == red_count - 1
+	assert game.get_player("orange").get_num_resources() == orange_count + 1
 
 
 if __name__ == "__main__":

@@ -116,7 +116,7 @@ class CatanConstants():
 	}
 
 	development_cards = {
-		"soldier" : 4,
+		"knight": 14,
 		"VP" : 5,
 		"monopoly" : 2,
 		"road building" : 2,

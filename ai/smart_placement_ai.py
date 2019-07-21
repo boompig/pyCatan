@@ -1,10 +1,11 @@
-from ai import AI
+from .ai import AI
 from game_engine import Game
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional, Set, Iterator
 import random
 from hex import Hex
 from catan_types import Vertex, Edge
 import logging
+from catan_gen import CatanConstants
 
 
 logger = logging.getLogger(__name__)
@@ -12,8 +13,9 @@ logger = logging.getLogger(__name__)
 
 class SmartPlacementAI(AI):
 
-	def __init__(self, game: Game) -> None:
+	def __init__(self, color: str, game: Game) -> None:
 		super().__init__()
+		self._color = color
 		self._vertex_probs = {}  # type: Dict[int, List[Vertex]]
 		self._prepare(game)
 
@@ -140,3 +142,74 @@ class SmartPlacementAI(AI):
 			gone_list.append(r)
 			n -= 1
 		return gone_list
+
+	def do_turn(self, game: Game):
+		raise NotImplementedError()
+
+	def __get_available_settlement_vertices(self, game: Game) -> Set[Vertex]:
+		player = game.get_player(self._color)
+		# the simplest way is probably to get all the vertices from the roads
+		potential_vs = player.get_road_vertices()
+		good_vs = potential_vs.intersection(game.available_settlement_set)
+		return good_vs
+
+	def __get_upgradable_settlements(self, game: Game) -> List[Vertex]:
+		l = []
+		player = game.get_player(self._color)
+		for v, s in player._settlements.items():
+			if s.is_city():
+				l.append(v)
+		return l
+
+	def __get_available_road_placements(self, game: Game) -> Iterator[Edge]:
+		player = game.get_player(self._color)
+		for vertex in player.get_road_vertices():
+			for v2 in game.get_adjacent_vertices(vertex):
+				if game.can_place_road(vertex, v2, self._color):
+					yield (vertex, v2)
+
+	def get_structure_to_buy(self, game: Game) -> Optional[dict]:
+		player = game.get_player(self._color)
+
+		# preference for development cards
+		cost = CatanConstants.development_card_cost
+		if player.can_deduct_resources(cost) and game.has_development_cards():
+			return {
+				"purchase": "development card"
+			}
+
+		# next try to build a settlement
+		available_settlement_vertices = self.__get_available_settlement_vertices(game)
+		if len(available_settlement_vertices) > 0:
+			cost = CatanConstants.building_costs["settlement"]
+			if player.can_deduct_resources(cost):
+				return {
+					"purchase": "settlement",
+					"placement": random.choice(list(available_settlement_vertices))
+				}
+
+		# city
+		upgradable_settlements = self.__get_upgradable_settlements(game)
+		if len(upgradable_settlements) > 0:
+			cost = CatanConstants.building_costs["city"]
+			if player.can_deduct_resources(cost):
+				return {
+					"purchase": "city",
+					"placement": random.choice(list(upgradable_settlements))
+				}
+
+		# road
+		cost = CatanConstants.building_costs["road"]
+		if player.can_deduct_resources(cost):
+			# find a spare place to build it
+			places = [edge for edge in self.__get_available_road_placements(game)]
+			if places == []:
+				# logging.debug(f"nowhere to place a new road for player {self.color}")
+				pass
+			else:
+				return {
+					"purchase": "road",
+					"placement": random.choice(places)
+				}
+
+		return None

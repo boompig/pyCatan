@@ -22,7 +22,7 @@ from utils import CatanUtils
 from catan_types import Vertex
 import math
 import logging
-from smart_placement_ai import SmartPlacementAI
+from ai.smart_placement_ai import SmartPlacementAI
 from typing import Dict
 
 
@@ -397,7 +397,7 @@ class CatanApp():
 
 		self._ais = {}  # type: Dict[str, SmartPlacementAI]
 		for color in self.players:
-			self._ais[color] = SmartPlacementAI(self._map)
+			self._ais[color] = SmartPlacementAI(color, self._map)
 
 		self.automate_placement()
 
@@ -823,15 +823,14 @@ class CatanApp():
 			dash=(2, 4)
 		)
 
-	def steal_from_player(self, from_player):
+	def steal_from_player(self, from_player: str):
 		'''Steal from player of given player color.
 		Called by selecting player color in robber motion.'''
 
 		to_player = self.players[self._turn]
-		r = self._map.robber_steal(from_player, to_player)
+		self._map.robber_steal(from_player, to_player)
 		self.update_hand(from_player)
 		self.update_hand(to_player)
-		print("Stole {} from {} and gave to {}".format(r, from_player, to_player))
 		self.post_status_note("Stole from {}".format(from_player))
 		self.change_to_state("gameplay")
 

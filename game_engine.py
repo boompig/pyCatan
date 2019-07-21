@@ -157,10 +157,33 @@ class Game():
     def get_current_color(self) -> str:
         return self._colors[self._turn]
 
-    def play_development_card(self, color, card):
+    def __play_monopoly_card(self, player_color: str, target_resource: str) -> None:
+        receiving_player = self.get_player(player_color)
+        for color, player in self._players.items():
+            if color == player_color:
+                continue
+            hand = player.get_hand()
+            if target_resource in hand:
+                n = hand[target_resource]
+                resource_list = [target_resource] * n
+                player.deduct_resources(resource_list)
+                logger.debug("Took %d x %s from %s using monopoly", n, target_resource, color)
+                receiving_player.add_resources(resource_list)
+
+    def __play_knight_card(self, player_color: str, target_color: str) -> None:
+        self.robber_steal(target_color, player_color)
+
+    def play_development_card(self, color: str, card: str, params: dict):
         '''Player with given color plays given card. Process effects.'''
 
-        raise NotImplementedError()
+        player = self.get_player(color)
+        player.play_development_card(card)
+        if card == "monopoly":
+            self.__play_monopoly_card(color, **params)
+        elif card == "knight":
+            self.__play_knight_card(color, **params)
+        else:
+            raise NotImplementedError()
 
     def get_player_vp(self, color: str) -> int:
         '''Return number of victory points for player of given color.'''

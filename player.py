@@ -24,6 +24,7 @@ class Player():
 
 		self._dev_cards = {}  #type: Dict[str, int]
 		self._special_cards = set([])  # type: Set[str]
+		self._num_knights_played = 0
 
 	def get_num_resources(self) -> int:
 		'''Return the number of resources in the player's hand.'''
@@ -166,6 +167,14 @@ class Player():
 		self._dev_cards[card] += 1
 		if card == "VP":
 			self._vp += 1
+
+	def play_development_card(self, card: str) -> None:
+		'''Remove the given development card from development cards
+		This development is not a VP card'''
+
+		self._dev_cards[card] -= 1
+		if card == "knight":
+			self._num_knights_played += 1
 
 	def get_development_cards(self):
 		'''Return development cards for this player.'''

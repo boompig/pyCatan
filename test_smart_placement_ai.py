@@ -1,4 +1,4 @@
-from smart_placement_ai import SmartPlacementAI
+from ai.smart_placement_ai import SmartPlacementAI
 from game_engine import Game
 from catan_tk import CatanApp
 
@@ -15,6 +15,6 @@ def test_robber():
 	resources = ["ore"] * 10
 	player.add_resources(resources)
 	assert player.get_num_resources() > 7
-	ai = SmartPlacementAI(game)
+	ai = SmartPlacementAI(color, game)
 	ai.robber_discard(game, color)
 	assert player.get_num_resources() <= 7
