@@ -29,5 +29,5 @@ class DummyAI(AI):
 		assert l != []
 		return random.choice(l)
 
-	def get_structure_to_buy(self, game: Game) -> Optional[dict]:
+	def do_turn(self, game: Game) -> None:
 		return None

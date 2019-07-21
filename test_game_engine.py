@@ -62,38 +62,15 @@ def test_game_ends():
 		roll = game.roll_dice()
 		player = game.get_player(color)
 		print(f"[Round {floor(turn / 4) + 1}] {color} ({player.get_num_vp()} points) rolled {roll}")
-		# create a very simple strategy
-
 		color = game.get_current_color()
 		ai = ais[color]
-
-		stop = False
-		while not stop:
-			structure = ai.get_structure_to_buy(game)
-			# print(structure)
-			if structure:
-				last_move_turn = turn
-				if structure["purchase"] == "road":
-					game.add_road(structure["placement"][0], structure["placement"][1], color)
-				elif structure["purchase"] == "city":
-					game.add_city(structure["placement"], color)
-				elif structure["purchase"] == "settlement":
-					game.add_settlement(structure["placement"], color)
-				elif structure["purchase"] == "development card":
-					game.get_development_card(color)
-				else:
-					raise Exception()
-			else:
-				stop = True
+		ai.do_turn(game)
 		game.next_turn()
 		turn += 1
-
 	# print details
 	print("-" * 60)
 	for color, player in game._players.items():
 		print(f"[{color}] - {player.get_num_vp()} points")
-
-
 	print("last made a move on turn %s" % last_move_turn)
 	assert turn < MAX_TURN
 	assert game.is_game_over

@@ -176,7 +176,7 @@ class Player():
 		if card == "knight":
 			self._num_knights_played += 1
 
-	def get_development_cards(self):
+	def get_development_cards(self) -> Dict[str, int]:
 		'''Return development cards for this player.'''
 
 		return self._dev_cards
