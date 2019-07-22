@@ -221,7 +221,7 @@ class SmartPlacementAI(AI):
 		# preference for development cards
 		cost = CatanConstants.development_card_cost
 		if player.can_deduct_resources(cost):
-			game.get_development_card(self._color)
+			game.buy_development_card(self._color)
 
 		# next try to build a settlement
 		available_settlement_vertices = self.__get_available_settlement_vertices(game)

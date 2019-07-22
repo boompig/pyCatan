@@ -186,6 +186,7 @@ class Game():
 
         player = self.get_player(color)
         player.play_development_card(card)
+        logger.info("%s played card %s", color, card)
         if card == "monopoly":
             self.__play_monopoly_card(color, **params)
         elif card == "knight":
@@ -206,7 +207,7 @@ class Game():
     def has_development_cards(self) -> bool:
         return len(self._dev_card_deck) > 0
 
-    def get_development_card(self, color: str) -> str:
+    def buy_development_card(self, color: str) -> str:
         '''Give out a development card to the player if they can afford it.
         Return the development card, or None if none given.'''
 

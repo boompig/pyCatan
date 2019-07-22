@@ -401,7 +401,7 @@ class CatanApp():
 
 		self.automate_placement()
 
-	def play_dev_card(self):
+	def play_development_card(self):
 		raise NotImplementedError()
 
 	def buy_development_card(self):
@@ -409,10 +409,10 @@ class CatanApp():
 
 		color = self.players[self._turn]
 		try:
-			card = self._map.get_development_card(color)
+			self._map.buy_development_card(color)
 			self.post_status_note("Successfully bought development card")
 			self.update_hand(color)
-			print("{} bought development card '{}'".format(color, card))
+			# print("{} bought development card '{}'".format(color, card))
 			self.update_dev_cards(color)
 			self.update_vp(color)
 		except DevelopmentCardError as e:
