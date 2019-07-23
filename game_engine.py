@@ -195,6 +195,7 @@ class Game():
         self.move_robber(target_coords, target_color, player_color)
 
     def __play_year_of_plenty_card(self, player_color: str, resources: List[str]) -> None:
+        assert len(resources) == 2
         player = self.get_player(player_color)
         player.add_resources(resources)
 

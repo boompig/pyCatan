@@ -230,6 +230,29 @@ def test_play_road_building_card():
 	assert player.get_num_roads() == 4
 
 
+def test_play_year_of_plenty():
+	random.seed(42)
+	game = Game(
+		"orange",
+		COLORS,
+		LATTICE
+	)
+	ais = { color: DummyAI(color, game) for color in COLORS }
+	_automate_placement(ais, game, COLORS)
+	color = game.get_current_color()
+	player = game.get_player(color)
+
+	n = player.get_num_resources()
+	assert n <= 3
+
+	player.add_development_card("year of plenty")
+	game.play_development_card(color, "year of plenty", {
+		"resources": ["ore", "wheat"]
+	})
+
+	assert player.get_num_resources() == n + 2
+
+
 if __name__ == "__main__":
 	import logging
 	import coloredlogs
