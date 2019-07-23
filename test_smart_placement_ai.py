@@ -16,5 +16,5 @@ def test_robber():
 	player.add_resources(resources)
 	assert player.get_num_resources() > 7
 	ai = SmartPlacementAI(color, game)
-	ai.robber_discard(game, color)
+	ai.robber_discard(game)
 	assert player.get_num_resources() <= 7

@@ -3,7 +3,7 @@ from game_engine import Game
 from typing import Tuple, Dict, List, Optional, Set, Iterator
 import random
 from hex import Hex
-from catan_types import Vertex, Edge
+from catan_types import Vertex, Edge, HexCoord
 import logging
 from catan_gen import CatanConstants
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class SmartPlacementAI(AI):
 
 	def __init__(self, color: str, game: Game) -> None:
-		super().__init__()
+		super().__init__(color, game)
 		self._color = color
 		self._vertex_probs = {}  # type: Dict[int, List[Vertex]]
 		self._prepare(game)
@@ -68,7 +68,7 @@ class SmartPlacementAI(AI):
 				s = game._settlements[v]
 
 				if s.color() == color:
-					return 0 # no points for hexes with same color as choosing player
+					score += -100 # negative points for hexes with same color as choosing player
 				elif s.is_city():
 					score += 2 * hex.get_num_dots()
 				else :
@@ -76,42 +76,40 @@ class SmartPlacementAI(AI):
 
 		return score
 
-	def get_robber_pick(self, game: Game) -> str:
-		'''Return a color to steal from. This is random.'''
-
-		l = []
-
-		for v in game.get_robber_hex().get_vertices():
-			if v in game._settlements:
-				l.append(game._settlements[v].color())
-		if l == []:
-			raise Exception("this is bad")
-		else:
-			return random.choice(l)
-
-	def get_robber_placement(self, game: Game, color: str) -> Vertex:
+	def get_robber_placement(self, game: Game) -> Tuple[Optional[str], HexCoord]:
 		'''Return the *position* of the hex on which to place the robber.
 		Should be a high-producing hex with no settlements/cities by this player.
 		Color is the color of the player placing the robber.'''
 
 		max_score = 0
 		best_hex = None
+		best_hex_coord = None
 
 		for row_i, row in enumerate(game._board):
 			for col, hex in enumerate(row):
-				score = self._eval_hex_robber_score(game, hex, color)
+				score = self._eval_hex_robber_score(game, hex, self._color)
 				if score > max_score:
-					#best_hex = hex
-					best_hex = (row_i, col)
+					best_hex = hex
+					best_hex_coord = (row_i, col)
 					max_score = score
 		assert best_hex is not None
-		return best_hex
+		assert best_hex_coord is not None
+		colors = game.get_players_on_hex(best_hex)
+		if self._color in colors:
+			colors.remove(self._color)
+		if colors == []:
+			return None, best_hex_coord
+		else:
+			return colors[0], best_hex_coord
 
 	def get_settlement_placement(self, game: Game) -> Vertex:
 		'''Return the settlement with the highest combined prob. of generating a resource.'''
 
+		assert len(game.available_settlement_set) > 0
+
 		sorted_vals = list(self._vertex_probs.keys())
 		assert sorted_vals != []
+		# highest probabilities go first
 		sorted_vals.sort(reverse=True)
 		s = game.available_settlement_set
 
@@ -122,14 +120,14 @@ class SmartPlacementAI(AI):
 					return v
 			# all of these are now off the table
 			del(self._vertex_probs[val])
-		raise Exception("this is bad")
+		raise Exception("this is bad: nowhere to place settlement")
 
-	def robber_discard(self, game: Game, color: str) -> List[str]:
+	def robber_discard(self, game: Game) -> List[str]:
 		'''Discard random cards from the player's hand.
 		Return those cards.
 		Right now discards random cards'''
 
-		player = game.get_player(color)
+		player = game.get_player(self._color)
 		n = player.get_num_resources()
 		gone_list = []
 		while n > 7:
@@ -179,6 +177,7 @@ class SmartPlacementAI(AI):
 
 	def do_turn(self, game: Game) -> None:
 		player = game.get_player(self._color)
+		actions = []
 
 		playable_cards = self.__get_playable_cards(game)
 		if playable_cards != []:
@@ -191,14 +190,17 @@ class SmartPlacementAI(AI):
 					{"target_resource": r}
 				)
 			elif card == "knight":
-				colors = game.get_colors()
-				colors.remove(self._color)
-				target_color = random.choice(colors)
+				placement = self.get_robber_placement(game)
 				game.play_development_card(
 					self._color,
 					card,
-					{"target_color": target_color}
+					{
+						"target_color": placement[0],
+						"target_coords": placement[1]
+					}
 				)
+				# pick the best hex that doesn't have a settlement of mine on it
+
 			elif card == "year of plenty":
 				r1 = self.__get_random_resource()
 				r2 = self.__get_random_resource()
@@ -218,10 +220,13 @@ class SmartPlacementAI(AI):
 			else:
 				raise NotImplementedError()
 
+			actions.append("played development card")
+
 		# preference for development cards
 		cost = CatanConstants.development_card_cost
 		if player.can_deduct_resources(cost):
 			game.buy_development_card(self._color)
+			actions.append("bought development card")
 
 		# next try to build a settlement
 		available_settlement_vertices = self.__get_available_settlement_vertices(game)
@@ -230,6 +235,7 @@ class SmartPlacementAI(AI):
 			if player.can_deduct_resources(cost):
 				v = random.choice(list(available_settlement_vertices))
 				game.add_settlement(v, self._color)
+				actions.append("bought settlement")
 
 		# city
 		upgradable_settlements = self.__get_upgradable_settlements(game)
@@ -238,6 +244,7 @@ class SmartPlacementAI(AI):
 			if player.can_deduct_resources(cost):
 				v = random.choice(list(upgradable_settlements))
 				game.add_city(v, self._color)
+				actions.append("upgraded settlement to city")
 
 		# road
 		cost = CatanConstants.building_costs["road"]
@@ -250,3 +257,7 @@ class SmartPlacementAI(AI):
 			else:
 				road = random.choice(places)
 				game.add_road(road[0], road[1], self._color)
+				actions.append("bought road")
+
+		if actions == []:
+			logger.debug("AI for %s did nothing", self._color)

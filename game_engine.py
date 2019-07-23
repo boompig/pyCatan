@@ -8,8 +8,8 @@ from catan_gen import CatanConstants
 from hex import Hex
 from player import Player
 from settlement import Settlement
-from typing import Dict, List, Set, Optional
-from catan_types import Vertex, Edge
+from typing import Dict, List, Set, Optional, Tuple
+from catan_types import Vertex, Edge, Lattice, HexCoord
 import logging
 from enum import Enum, auto
 
@@ -48,7 +48,7 @@ class Game():
 
     def __init__(self, starting_color: str,
                  colors: List[str],
-                 hex_coord_lattice) -> None:
+                 hex_coord_lattice: Lattice) -> None:
         self._decr_set = set([1, 2, 4, 6])
         self._players = {}  # type: Dict[str, Player]
         self._dev_card_deck = []  # type: List[str]
@@ -68,9 +68,12 @@ class Game():
         self._colors = colors
         self._state = GameState.INITIAL_PLACEMENT
         self._hex_coord_lattice = hex_coord_lattice
+        self._hexes = {}  # type: Dict[Tuple[int, int], Hex]
         # placement goes to the last player, then comes back
         # this variable keeps track of which way we're going
         self._placement_count = 0
+        self._robber_hex = (0, 0)  # type: Tuple[int, int]
+        self._desert_pos = (0, 0)  # type: Tuple[int, int]
 
         # where do the special cards reside?
         self._longest_road_player = None  # type: Optional[Player]
@@ -103,6 +106,11 @@ class Game():
         for row_i, row in enumerate(self._board):
             for col_i, hex in enumerate(row):
                 hex.set_vertices(self._hex_coord_lattice[row_i][col_i])
+                hex.set_coord((row_i, col_i))
+                self._hexes[(row_i, col_i)] = hex
+
+    def get_board(self) -> Dict[Tuple[int, int], Hex]:
+        return self._hexes
 
     @property
     def is_game_over(self) -> bool:
@@ -116,19 +124,26 @@ class Game():
         r1 = random.randint(1, 6)
         r2 = random.randint(1, 6)
         roll = r1 + r2
-        self.produce_resources_from_roll(roll)
+        color = self.get_current_color()
+        logger.debug("%s rolled %d", color, roll)
+        self._produce_resources_from_roll(roll)
         self._state = GameState.GAMEPLAY
         return roll
 
     def check_game_over(self):
         '''Check whether the game is over and set appropriate variables'''
-        for _, player in self._players.items():
+        for color, player in self._players.items():
             if player.get_num_vp() >= 10:
                 self._is_game_over = True
+                logger.warning("Game is over - %s has over 10 points", color)
                 break
 
     def next_turn(self) -> None:
-        '''Roll over to the next turn'''
+        '''End the current turn.
+        Roll over to the next turn.
+        DO NOT roll the dice.
+        Check game-end conditions here'''
+
         assert self._state != GameState.ROLL_DICE, "Cannot end turn before rollling dice"
         if self._state == GameState.GAMEPLAY:
             self.check_game_over()
@@ -163,7 +178,7 @@ class Game():
             if color == player_color:
                 continue
             hand = player.get_hand()
-            if target_resource in hand:
+            if hand.get(target_resource, 0) > 0:
                 n = hand[target_resource]
                 assert n > 0
                 resource_list = [target_resource] * n
@@ -173,8 +188,11 @@ class Game():
             else:
                 logger.debug("Tried to take %s from %s using monopoly but that player does not have any", target_resource, color)
 
-    def __play_knight_card(self, player_color: str, target_color: str) -> None:
-        self.robber_steal(target_color, player_color)
+    def __play_knight_card(self, player_color: str, target_color: Optional[str], target_coords: HexCoord) -> None:
+        assert isinstance(target_coords, tuple)
+        assert isinstance(player_color, str)
+
+        self.move_robber(target_coords, target_color, player_color)
 
     def __play_year_of_plenty_card(self, player_color: str, resources: List[str]) -> None:
         player = self.get_player(player_color)
@@ -182,14 +200,15 @@ class Game():
 
     def __play_road_building_card(self, player_color: str, roads: List[Edge]) -> None:
         for road in roads:
-            self.add_road(road[0], road[1], player_color, initial_placement=False)
+            # initial_placement as a way to avoid paying a price
+            self.add_road(road[0], road[1], player_color, initial_placement=True)
 
     def play_development_card(self, color: str, card: str, params: dict):
         '''Player with given color plays given card. Process effects.'''
 
+        logger.info("%s played development card %s", color, card)
         player = self.get_player(color)
         player.play_development_card(card)
-        logger.info("%s played card %s", color, card)
         if card == "monopoly":
             self.__play_monopoly_card(color, **params)
         elif card == "knight":
@@ -218,9 +237,11 @@ class Game():
         cost = CatanConstants.development_card_cost
 
         if p.can_deduct_resources(cost) and len(self._dev_card_deck) > 0:
+            logger.info("%s bought a development card", color)
             p.deduct_resources(cost)
             card = self._dev_card_deck.pop()
             p.add_development_card(card)
+            logger.debug("development card was %s", card)
             return card
         elif len(self._dev_card_deck) == 0:
             raise DevelopmentCardError(f"There are no more development cards left");
@@ -418,7 +439,7 @@ class Game():
             raise RoadPlacementError("cannot afford road")
 
         self._roads.add((v1, v2))
-        if p.get_num_roads() >= 2:
+        if not initial_placement:
             p.deduct_resources(cost)
         p.add_road(v1, v2)
         # now figure out whether this makes this road the longest road
@@ -556,16 +577,17 @@ class Game():
             logger.info("Producing resources from second settlement...")
             self.produce_resources_from_settlement(s)
 
-    def get_players_on_robber_hex(self):
+    def get_players_on_hex(self, hex: Hex) -> List[str]:
+        players = set([])
+        for v in hex.get_vertices():
+            if v in self._settlements:
+                players.add(self._settlements[v].color())
+        return list(players)
+
+    def get_players_on_robber_hex(self) -> List[str]:
         '''Return a list of player colors on the hex with the robber.'''
 
-        s = set([])
-
-        for v in self.get_robber_hex().get_vertices():
-            if v in self._settlements:
-                s.add(self._settlements[v].color())
-
-        return list(s)
+        return self.get_players_on_hex(self.get_robber_hex())
 
     def add_city(self, v: Vertex, color: str) -> None:
         '''Add a city of the given color to the map.
@@ -588,6 +610,7 @@ class Game():
         if not p.can_deduct_resources(cost):
             raise CityUpgradeError("You cannot afford to upgrade")
 
+        logger.info("%s upgraded a settlement into a city at %s", color, v)
         self._settlements[v].upgrade()
         p.deduct_resources(cost)
         p.upgrade_settlement_to_city(v)
@@ -598,8 +621,11 @@ class Game():
 
         self._vertex_set = set(self._vertex_map.keys())
 
+    def get_hexes_for_vertex(self, vertex: Vertex) -> List[Hex]:
+        return self._vertex_map[vertex]
+
     def _create_vertex_map(self) -> None:
-        ''' vertex_map maps coordinates to list of hexes
+        ''' vertex_map maps vertices to list of hexes
         Used to quickly determine adjacency when settlement is placed. '''
 
         self._vertex_map = {}
@@ -625,7 +651,7 @@ class Game():
         self._players[s.color()].add_resources(l)
         return l
 
-    def produce_resources_from_roll(self, roll: int) -> Dict[str, List[str]]:
+    def _produce_resources_from_roll(self, roll: int) -> Dict[str, List[str]]:
         '''For the given roll, return a map of player color to resources produced.
         Also distribute those resources to relevant players'''
         d = {}  # type: Dict[str, List[str]]
@@ -645,6 +671,7 @@ class Game():
         # now add these resources to the relevant players
         for color, r_list in d.items():
             self._players[color].add_resources(r_list)
+        logger.debug("Produced resources: %s", str(d))
         return d
 
     def get_adjacent_vertices(self, v: Vertex) -> Set[Vertex]:
@@ -681,35 +708,52 @@ class Game():
 
         return self._board[row][col]
 
+    def get_robber_hex_coords(self) -> Tuple[int, int]:
+        return self._robber_hex
+
     def get_robber_hex(self) -> Hex:
         '''Return the hex with the robber on it.'''
 
         #return self._robber_hex
         return self._get_hex_at_coords(*self._robber_hex)
 
-    def set_robber_hex(self, row: int, col: int) -> bool:
+    def move_robber(self, coords: Tuple[int, int], steal_from_player: Optional[str], moving_player: str):
+        assert isinstance(coords, tuple) and len(coords) == 2 and isinstance(coords[0], int)
+        assert isinstance(moving_player, str)
+
+        if not self.can_move_robber(coords[0], coords[1]):
+            raise Exception("cannot move the robber there")
+        logger.info("%s moved the robber to %d, %d", moving_player, coords[0], coords[1])
+        self._set_robber_hex(coords[0], coords[1])
+        if steal_from_player:
+            logger.info("%s stealing from %s", moving_player, steal_from_player)
+            r = self._robber_steal(steal_from_player, moving_player)
+            if r:
+                logger.debug("stole %s", r)
+            else:
+                logger.debug("stole nothing")
+        else:
+            logger.info("%s not stealing from anyone", moving_player)
+
+    def can_move_robber(self, row: int, col: int) -> bool:
+        if (row, col) == self._robber_hex:
+            return False
+        return True
+
+    def _set_robber_hex(self, row: int, col: int) -> None:
         '''Set the position of the robber.
         Cannot be same as old position.
-        Return True iff robber was properly set.'''
+        '''
+        self._robber_hex = (row, col)
 
-        if (row, col) == self._robber_hex:
-            #print "Robber cannot go on same space!!"
-            return False
-        else:
-            self._robber_hex = (row, col)
-            return True
-            #self._board[row][col]
-
-    def robber_steal(self, from_player: str, to_player: str) -> Optional[str]:
+    def _robber_steal(self, from_player: str, to_player: str) -> Optional[str]:
         '''Robber steals from from_player and gives to to_player.
         Return the resource that was stolen.
         If from_player has no cards, return None.'''
 
         r = self._players[from_player].steal_resource()
-
         if r is not None:
            self._players[to_player].add_resources([r])
-
         return r
 
     def _create_resource_map(self) -> None:
@@ -737,5 +781,12 @@ class Game():
         return self._turn
 
     def get_colors(self) -> List[str]:
-        l = self._colors.copy()
-        return l
+        return self._colors.copy()
+
+    def get_winning_player(self) -> str:
+        '''Return the color of the player that has won the game.'''
+
+        for color, player in self._players.items():
+            if player.get_num_vp() >= 10:
+                return color
+        raise Exception("no player has won")

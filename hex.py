@@ -6,10 +6,7 @@
 from catan_gen import CatanConstants
 from utils import CatanUtils
 from typing import Optional, Tuple
-from catan_types import Vertex
-
-
-Vertices = Tuple[Vertex, Vertex, Vertex, Vertex, Vertex, Vertex]
+from catan_types import HexCoord, Vertices
 
 
 class Hex():
@@ -24,9 +21,16 @@ class Hex():
 		self._number = -1
 		# coordinates of vertices
 		self._vertices = None  # type: Optional[Vertices]
+		self._coord = None  # type: Optional[HexCoord]
 
 	def get_resource(self) -> str:
 		return self._resource
+
+	def set_coord(self, coord: HexCoord) -> None:
+		self._coord = coord
+
+	def get_coord(self):
+		return self._coord
 
 	def set_vertices(self, vertices: Vertices) -> None:
 		self._vertices = vertices

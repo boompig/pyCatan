@@ -47,7 +47,7 @@ def test_game_ends():
 		if i == 0:
 			ais[color] = SmartPlacementAI(color, game)
 		else:
-			ais[color] = DummyAI(color)
+			ais[color] = DummyAI(color, game)
 
 	MAX_TURN = 10000
 	_automate_placement(ais, game, COLORS)
@@ -84,7 +84,7 @@ def test_initial_placement():
 		LATTICE
 	)
 	l = []
-	ais = { color: DummyAI(color) for color in COLORS }
+	ais = { color: DummyAI(color, game) for color in COLORS }
 	while game.get_state() == GameState.INITIAL_PLACEMENT:
 		color = game.get_current_color()
 		l.append(color)
@@ -110,14 +110,20 @@ def test_play_knight_card():
 		COLORS,
 		LATTICE
 	)
-	ais = { color: DummyAI(color) for color in COLORS }
+	ais = { color: DummyAI(color, game) for color in COLORS }
 	_automate_placement(ais, game, COLORS)
 	player = game.get_player("orange")
 	player.add_development_card("knight")
 	red_count = game.get_player("red").get_num_resources()
 	orange_count = game.get_player("orange").get_num_resources()
+	green_player = game.get_player("green")
+	# this should always be true regardless of placement
+	assert green_player.get_num_resources() >= 1
+	green_settlement_v = green_player.get_settlement(0).vertex()
+	target_hex = game.get_hexes_for_vertex(green_settlement_v)[0]
 	game.play_development_card("orange", "knight", {
-		"target_color": "red"
+		"target_color": "red",
+		"target_coords": target_hex.get_coord()
 	})
 	assert game.get_player("red").get_num_resources() == red_count - 1
 	assert game.get_player("orange").get_num_resources() == orange_count + 1
@@ -130,7 +136,7 @@ def test_play_monopoly_card():
 		COLORS,
 		LATTICE
 	)
-	ais = { color: DummyAI(color) for color in COLORS }
+	ais = { color: DummyAI(color, game) for color in COLORS }
 	_automate_placement(ais, game, COLORS)
 	orange_player = game.get_player("orange")
 	orange_player.add_development_card("monopoly")

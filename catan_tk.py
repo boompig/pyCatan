@@ -19,17 +19,17 @@ from tkinter import RIGHT, DISABLED, W, HIDDEN, NORMAL, Tk, Frame, Button, Strin
 from catan_gen import CatanConstants, CatanRenderConstants
 from game_engine import Game, DevelopmentCardError, SettlementPlacementError, CityUpgradeError, RoadPlacementError, GameState
 from utils import CatanUtils
-from catan_types import Vertex
+from catan_types import Vertex, Lattice, Vertices
 import math
 import logging
 from ai.smart_placement_ai import SmartPlacementAI
-from typing import Dict
+from typing import Dict, List
 
 
 logger = logging.getLogger(__name__)
 
 
-def get_hex_coords(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist):
+def get_hex_coords(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist) -> Vertices:
 	'''Given certain parameters for the hexagon, return tuple of vertices for hexagon.'''
 
 	# TODO move under class
@@ -44,28 +44,27 @@ def get_hex_coords(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist
 	)
 
 
-def get_hex_row(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist, num):
+def get_hex_row(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist, num) -> List[Vertices]:
 	'''Return list of hex row coordinates. num is the number of hexes in this row.'''
 
 	# TODO move under class
 
-	hexes = []
+	hexes = []  # type: List[Vertices]
 
 	for i in range(num):
 		if len(hexes) > 0:
 			x_0, y_0 = hexes[-1][3]
 			x_0 += major_horiz_dist
-
 		hexes.append(get_hex_coords(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist))
 	return hexes
 
 
-def get_hex_lattice(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist):
+def get_hex_lattice(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist) -> Lattice:
 	'''Return a list of lists of hex coords.'''
 
 	# TODO move under class
 
-	rows = []
+	rows = []  # type: Lattice
 	decr_set = set([1, 2, 4, 6])
 	incr = minor_horiz_dist + major_horiz_dist
 
@@ -244,7 +243,7 @@ class CatanApp():
 					self.enable_stealing()
 				else:
 					print("ROBBER FAIL")
-					self.move_robber_to_hex(self._map.get_robber_hex())
+					self.move_robber_to_hex_ui(self._map.get_robber_hex())
 					return
 
 	def enable_stealing(self):
@@ -258,7 +257,7 @@ class CatanApp():
 			self.change_to_state("gameplay")
 		elif len(player_list) == 1:
 			# don't go through trouble of selection here, since there is only 1 choice
-			self.steal_from_player(player_list[0])
+			self.steal_from_player_ui(player_list[0])
 			self.change_to_state("gameplay")
 		else:
 			for c in player_list:
@@ -272,7 +271,7 @@ class CatanApp():
 	def _get_turn(self):
 		return self._turn
 
-	def move_robber_to_hex(self, destination_hex):
+	def move_robber_to_hex_ui(self, destination_hex):
 		'''Move robber to the given hex. Here, hex is the Hex object.'''
 
 		new_pos = destination_hex.get_center()
@@ -283,31 +282,19 @@ class CatanApp():
 	def automate_robber(self):
 		'''Automate the robber completely.'''
 
-		self.automate_robber_movement()
-		self.automate_robber_steal_picking()
-		#self.change_to_state("gameplay")
-
-	def automate_robber_steal_picking(self):
-		'''Automate the process of picking a person to steal from, once robber has been placed.'''
-
-		ai = self._ais[self._map.get_current_color()]
-		color = ai.get_robber_pick(self._map)
-		self.steal_from_player(color)
-
-	def automate_robber_movement(self):
-		'''Choose a place to put the robber.'''
-
 		color = self.players[self._turn]
 		ai = self._ais[color]
-		row, col = ai.get_robber_placement(self._map, color)
+		target_color, (row, col) = ai.get_robber_placement(self._map)
 		#destination_hex_sprite = self._canvas.find_withtag("hex_{}_{}".format(row, col))
 		model_hex = self._map._board[row][col]
 
-		if self._map.set_robber_hex(row, col):
-			self.move_robber_to_hex(model_hex)
+		if self._map.can_move_robber(row, col):
+			self.move_robber_to_hex_ui(model_hex)
+			self._map.move_robber((row, col), target_color, color)
+			self.steal_from_player_ui(target_color)
 		else:
-			print("AI picked same hex to put robber, skipping stealing...")
-			#self.move_robber_to_hex(self._map.get_robber_hex())
+			logging.error("AI picked same hex to put robber, skipping stealing...")
+			self.post_status_note("cannot place robber on same hex as it was", True)
 
 	def automate_placement(self):
 		'''Create a random placement of the first two roads and settlements for each player.'''
@@ -521,7 +508,7 @@ class CatanApp():
 				ai = self._ais[color]
 				player = self._map.get_player(color)
 				# AI responsible for discarding cards
-				cards = ai.robber_discard(self._map, color)
+				cards = ai.robber_discard(self._map)
 				if cards != []:
 					logger.debug("%s discarded %s due to robber, now have %d cards",
 								color, cards, player.get_num_resources())
@@ -535,8 +522,6 @@ class CatanApp():
 			#	if c in discard_map:
 			#		self.post_status_note("{} must discard {} cards".format(c.title(), discard_map[c]), True)
 		else:
-			# compute produced resources
-			self._map.produce_resources_from_roll(n)
 
 			# update player hands on screen
 			for c in self.players:
@@ -747,7 +732,7 @@ class CatanApp():
 
 	def draw_hand_area_section(self, color: str, i: int):
 		'''Draw the section of the hand area for player of given color'''
-		f = lambda event : self.steal_from_player(color)
+		f = lambda event : self.steal_from_player_ui(color)
 		t = "player_hand_rect_%s" % color
 
 		self._canvas.create_rectangle(
@@ -823,12 +808,11 @@ class CatanApp():
 			dash=(2, 4)
 		)
 
-	def steal_from_player(self, from_player: str):
+	def steal_from_player_ui(self, from_player: str):
 		'''Steal from player of given player color.
 		Called by selecting player color in robber motion.'''
 
 		to_player = self.players[self._turn]
-		self._map.robber_steal(from_player, to_player)
 		self.update_hand(from_player)
 		self.update_hand(to_player)
 		self.post_status_note("Stole from {}".format(from_player))

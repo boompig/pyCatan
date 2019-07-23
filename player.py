@@ -16,6 +16,7 @@ class Player():
 		# this variable stores the *permanent* victory points
 		# this does not include temporary victory points such as special cards
 		self._vp = 0
+		self._dev_card_vp = 0
 
 		self._settlements = {}  # type: Dict[Vertex, Settlement]
 		self._settlement_order = []  # type: List[Settlement]
@@ -82,7 +83,10 @@ class Player():
 	def get_num_settlements(self) -> int:
 		'''Return the number of settlements this player has built.'''
 
-		return len(self._settlements)
+		return len([s for s in self._settlement_order if not s.is_city()])
+
+	def get_num_cities(self):
+		return len([s for s in self._settlement_order if s.is_city()])
 
 	def get_settlements(self) -> List[Settlement]:
 		return self._settlement_order
@@ -113,6 +117,8 @@ class Player():
 		s = ""
 
 		for r, n in self._dev_cards.items():
+			if n == 0:
+				continue
 			s += "{} x {}, ".format(r, n)
 
 		return s[:-2]
@@ -145,11 +151,14 @@ class Player():
 			vp += CatanConstants.special_card_points[card]
 		return vp
 
-	def add_special_card(self, card: str):
+	def add_special_card(self, card: str) -> None:
 		self._special_cards.add(card)
 
-	def remove_special_card(self, card: str):
+	def remove_special_card(self, card: str) -> None:
 		self._special_cards.remove(card)
+
+	def has_special_card(self, card: str) -> bool:
+		return card in self._special_cards
 
 	def add_development_card(self, card: str) -> None:
 		'''Add given development card.'''
@@ -158,6 +167,10 @@ class Player():
 		self._dev_cards[card] += 1
 		if card == "VP":
 			self._vp += 1
+			self._dev_card_vp += 1
+
+	def get_development_card_vp(self) -> int:
+		return self._dev_card_vp
 
 	def play_development_card(self, card: str) -> None:
 		'''Remove the given development card from development cards
