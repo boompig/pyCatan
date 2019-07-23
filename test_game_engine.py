@@ -251,12 +251,3 @@ def test_play_year_of_plenty():
 	})
 
 	assert player.get_num_resources() == n + 2
-
-
-if __name__ == "__main__":
-	import logging
-	import coloredlogs
-	logging.basicConfig(level=logging.DEBUG)
-	coloredlogs.install(level=logging.DEBUG)
-
-	test_game_ends()

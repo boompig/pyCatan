@@ -246,9 +246,9 @@ class Game():
             logger.debug("development card was %s", card)
             return card
         elif len(self._dev_card_deck) == 0:
-            raise DevelopmentCardError(f"There are no more development cards left");
+            raise DevelopmentCardError(f"There are no more development cards left")
         else:
-            raise DevelopmentCardError(f"Player {color} cannot afford to buy a development card");
+            raise DevelopmentCardError(f"Player {color} cannot afford to buy a development card")
 
     def _create_players(self, colors: List[str]) -> None:
         '''Create brand new players. For now, they are just placeholders.'''
