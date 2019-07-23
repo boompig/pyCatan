@@ -199,6 +199,7 @@ class Game():
         player.add_resources(resources)
 
     def __play_road_building_card(self, player_color: str, roads: List[Edge]) -> None:
+        assert len(roads) == 2
         for road in roads:
             # initial_placement as a way to avoid paying a price
             self.add_road(road[0], road[1], player_color, initial_placement=True)

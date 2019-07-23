@@ -178,6 +178,58 @@ def test_play_monopoly_card():
 			assert player.get_num_resources() == old_totals[color] - num_ores[color]
 
 
+def test_play_road_building_card():
+	random.seed(42)
+	game = Game(
+		"orange",
+		COLORS,
+		LATTICE
+	)
+	ais = { color: DummyAI(color, game) for color in COLORS }
+	_automate_placement(ais, game, COLORS)
+	color = game.get_current_color()
+	player = game.get_player(color)
+
+	assert player.get_num_roads() == 2
+
+	player.add_development_card("road building")
+	# build out from one of the initially placed roads, away from settlements
+	roads = []
+
+	source_road = player._roads[1]
+	source_vertex = None
+	bad_vertex = None
+	if player.has_settlement_at(source_road[0]):
+		bad_vertex = source_road[0]
+		source_vertex = source_road[1]
+	else:
+		bad_vertex = source_road[1]
+		source_vertex = source_road[0]
+	possible_vs = game.get_adjacent_vertices(source_vertex)
+	possible_vs.remove(bad_vertex)
+	assert len(possible_vs) > 0
+	to_v = possible_vs.pop()
+
+	# first road
+	roads.append((source_vertex, to_v))
+
+	# second road builds again from the source road
+	# note that this can run into settlements, other roads, and suchlike conditions
+	possible_vs = game.get_adjacent_vertices(to_v)
+	possible_vs.remove(source_vertex)
+	assert len(possible_vs) > 0
+	to_v_2 = possible_vs.pop()
+
+	# second road
+	roads.append((to_v, to_v_2))
+
+	game.play_development_card(color, "road building", {
+		"roads": roads
+	})
+
+	assert player.get_num_roads() == 4
+
+
 if __name__ == "__main__":
 	import logging
 	import coloredlogs
