@@ -12,7 +12,6 @@ class Player():
 		'''Create a new Catan player.'''
 
 		self._resources = {}  # type: Dict[str, int]
-		self._num_resources = 0
 
 		# this variable stores the *permanent* victory points
 		# this does not include temporary victory points such as special cards
@@ -29,7 +28,7 @@ class Player():
 	def get_num_resources(self) -> int:
 		'''Return the number of resources in the player's hand.'''
 
-		return self._num_resources
+		return sum([v for v in self._resources.values()])
 
 	def can_deduct_resources(self, r_list: List[str]) -> bool:
 		'''Return True iff can deduct all resources in r_list from this player.'''
@@ -40,21 +39,18 @@ class Player():
 				return False
 		return True
 
-	def deduct_resources(self, r_list: List[str]) -> bool:
-		'''Deduct the given resources from the player. If not possible, return False.'''
+	def deduct_resources(self, r_list: List[str]) -> None:
+		'''Deduct the given resources from the player. If not possible, throw Exception.'''
 
 		if not self.can_deduct_resources(r_list):
-			return False
+			raise Exception("Cannot deduct these resources")
 
 		for r in r_list:
 			self._resources[r] -= 1
-			self._num_resources -= 1
-
 			# if this part is disabled, will have zeroes as values for some resources
 			# if enabled, then some resources will not be in the dict
 			#if self._resources[r] == 0:
 			#	del(self._resources[r])
-		return True
 
 	def add_settlement(self, v: Vertex, s: Settlement) -> None:
 		'''Add the given settlement to the list of settlements for this player.'''
@@ -98,7 +94,6 @@ class Player():
 			if r not in self._resources:
 				self._resources[r] = 0
 			self._resources[r] += 1
-			self._num_resources += 1
 
 		#self._resources.extend(resource_list)
 
@@ -126,25 +121,21 @@ class Player():
 		'''Return (discard) random resource.
 		If the player has no resources, return None.'''
 
-		if self._num_resources == 0:
+		num_resources = self.get_num_resources()
+
+		if num_resources == 0:
 			return None
 
-		n = random.randint(0, self.get_num_resources() - 1)
+		n = random.randint(0, num_resources - 1)
 		i = 0
 
 		for k in self._resources:
-			if i <= n < i + self._resources[k]:
+			if i <= n and n < i + self._resources[k]:
 				self._resources[k] -= 1
-				self._num_resources -= 1
 				return k
 			else:
 				i += self._resources[k]
-		return None
-
-	def get_monopoly_resources(self, r):
-		'''Get all resources of type r. Discard.'''
-
-		raise NotImplementedError()
+		raise Exception("Fail")
 
 	def get_num_vp(self) -> int:
 		'''Return number of victory points this player has.'''
@@ -182,9 +173,8 @@ class Player():
 		return self._dev_cards
 
 	def get_hand(self) -> Dict[str, int]:
-		'''Return the player's hand.'''
-
-		return self._resources
+		'''Return the resources in the player's hand (copy).'''
+		return self._resources.copy()
 
 	def has_road_to(self, v: Vertex) -> bool:
 		'''Return True iff this player has a road leading to vertex v.'''

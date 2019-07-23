@@ -165,10 +165,13 @@ class Game():
             hand = player.get_hand()
             if target_resource in hand:
                 n = hand[target_resource]
+                assert n > 0
                 resource_list = [target_resource] * n
                 player.deduct_resources(resource_list)
                 logger.debug("Took %d x %s from %s using monopoly", n, target_resource, color)
                 receiving_player.add_resources(resource_list)
+            else:
+                logger.debug("Tried to take %s from %s using monopoly but that player does not have any", target_resource, color)
 
     def __play_knight_card(self, player_color: str, target_color: str) -> None:
         self.robber_steal(target_color, player_color)

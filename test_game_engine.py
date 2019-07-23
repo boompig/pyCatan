@@ -112,7 +112,6 @@ def test_play_knight_card():
 	)
 	ais = { color: DummyAI(color) for color in COLORS }
 	_automate_placement(ais, game, COLORS)
-	# give the first
 	player = game.get_player("orange")
 	player.add_development_card("knight")
 	red_count = game.get_player("red").get_num_resources()
@@ -122,6 +121,55 @@ def test_play_knight_card():
 	})
 	assert game.get_player("red").get_num_resources() == red_count - 1
 	assert game.get_player("orange").get_num_resources() == orange_count + 1
+
+
+def test_play_monopoly_card():
+	random.seed(42)
+	game = Game(
+		"orange",
+		COLORS,
+		LATTICE
+	)
+	ais = { color: DummyAI(color) for color in COLORS }
+	_automate_placement(ais, game, COLORS)
+	orange_player = game.get_player("orange")
+	orange_player.add_development_card("monopoly")
+	orange_hand = orange_player.get_hand()
+	# remove any ore in the source player's hand
+	if "ore" in orange_hand:
+		orange_player.deduct_resources(["ore"] * orange_hand["ore"])
+
+	total = 0
+	old_totals = {}
+	num_ores = {}
+	for color in game.get_colors():
+		player = game.get_player(color)
+		if color == "orange":
+			old_totals[color] = player.get_num_resources()
+			continue
+		hand = player.get_hand()
+		if "ore" in hand:
+			player.deduct_resources(["ore"] * hand["ore"])
+		assert hand.get("ore", 0) == 0
+		n = random.randint(1, 10)
+		player.add_resources(["ore"] * n)
+		old_totals[color] = player.get_num_resources()
+		assert player.get_hand()["ore"] == n
+		num_ores[color] = n
+		total += n
+
+	game.play_development_card("orange", "monopoly", {
+		"target_resource": "ore"
+	})
+	for color in game.get_colors():
+		print(color)
+		player = game.get_player(color)
+		if color == "orange":
+			assert player.get_hand().get("ore", 0) == total
+			assert player.get_num_resources() == old_totals["orange"] + total
+		else:
+			assert player.get_hand().get("ore", 0) == 0
+			assert player.get_num_resources() == old_totals[color] - num_ores[color]
 
 
 if __name__ == "__main__":
