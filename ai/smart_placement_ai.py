@@ -173,6 +173,7 @@ class SmartPlacementAI(AI):
 
 	def __get_random_resource(self) -> str:
 		l = list(CatanConstants.resource_distribution.keys())
+		l.remove("desert")
 		return random.choice(l)
 
 	def do_turn(self, game: Game) -> None:

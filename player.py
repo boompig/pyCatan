@@ -95,6 +95,7 @@ class Player():
 		'''Collect resources.'''
 
 		for r in resource_list:
+			assert r != "desert"
 			if r not in self._resources:
 				self._resources[r] = 0
 			self._resources[r] += 1
