@@ -208,6 +208,9 @@ class Player():
 			vs.add(road[1])
 		return vs
 
+	def get_roads(self) -> List[Edge]:
+		return self._roads
+
 
 if __name__ == "__main__":
 	p = Player()

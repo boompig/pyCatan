@@ -1,80 +1,25 @@
 <!DOCTYPE html>
-
-<!-- TODO: download JQuery to laptop because working on this when disconnected
-from the internet is getting really fucking annoying -->
-
 <html>
 	<head>
-		<meta charset="UTF-8" />
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+		<title>Catan UI Mockup</title>
 
 		<!-- general CSS -->
-		<link rel="stylesheet" type="text/css" href="style.css">
-		<link rel="stylesheet" type="text/css" href="player_tiles.css">
-		<link rel="stylesheet" type="text/css" href="hex.css">
+		<link rel="stylesheet" type="text/css" href="/css/style.css">
+		<link rel="stylesheet" type="text/css" href="/css/player_tiles.css">
+		<link rel="stylesheet" type="text/css" href="/css/hex.css">
 
 		<!-- JQuery -->
-		<script src="jquery-1.9.1.min.js"></script>
+		<script src="/js/jquery-1.9.1.min.js"></script>
 
 		<!-- Catan-related scripts -->
-		<script src="catan.js"></script>
-		<script src="catan_board.js"></script>
-		<script src="catan_player.js"></script>
-
-		<!-- basic script -->
-		<script>
-			$(document).ready(function() {
-				//initially hide action tiles
-				$("#action_tile_container").hide();
-				// initially hide trade panel
-				$("#trade_panel").hide();
-
-				// set console to auto-scroll
-				// vanilla JS
-				var textarea = document.getElementById('console');
-				textarea.scrollTop = textarea.scrollHeight;
-
-				set_action_button_events();
-
-				// generate stuff in template
-				Catan.generate_template_player_stats();
-
-				// add template to non-template sections
-				Catan.generate_resource_bar();
-				Catan.generate_player_tiles();
-				Catan.generate_trade_panel();
-				Catan.generate_buy_buttons();
-				CatanBoard.generate_board();
-			});
-
-			function set_trade_button_events() {
-				$("#trade_button").click(function() {
-					$("#trade_panel").show();
-				});
-
-				$(".action_button").not("#trade_button").click(function() {
-					$("#trade_panel").hide();
-				});
-			}
-
-			function set_buy_button_events() {
-				$("#buy_button").click(function() {
-					$("#action_tile_container").show();
-				});
-
-				$(".action_button").not("#buy_button").click(function() {
-					$("#action_tile_container").hide();
-				});
-			}
-
-			function set_action_button_events() {
-				set_buy_button_events();
-				set_trade_button_events();
-
-				$("#end_turn_button").click(function() {
-					Catan.change_turn();
-				});
-			}
-		</script>
+		<script src="/js/catan.js"></script>
+		<script src="/js/catan_board.js"></script>
+		<script src="/js/catan_player.js"></script>
+		<script src="/js/index.js"></script>
 	</head>
 	<body>
 		<div id="templates" style="display: none;">
@@ -85,7 +30,7 @@ from the internet is getting really fucking annoying -->
 			<button class="buy_button">
 				<span class="buy_item_name"></span>
 				<span class="buy_item_cost">
-					<span class="resource_logo_small template" />
+					<span class="resource_logo_small template"></span>
 				</span>
 			</button> <!-- end buy button-->
 

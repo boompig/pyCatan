@@ -8,3 +8,4 @@ monkeytype.sqlite3
 
 # editor
 .vscode/
+*.code-workspace

@@ -125,7 +125,7 @@ class Game():
         r2 = random.randint(1, 6)
         roll = r1 + r2
         color = self.get_current_color()
-        logger.debug("%s rolled %d", color, roll)
+        logger.info("%s rolled %d", color, roll)
         self._produce_resources_from_roll(roll)
         self._state = GameState.GAMEPLAY
         return roll
@@ -135,7 +135,7 @@ class Game():
         for color, player in self._players.items():
             if player.get_num_vp() >= 10:
                 self._is_game_over = True
-                logger.warning("Game is over - %s has over 10 points", color)
+                logger.info("Game is over - %s has over 10 points", color)
                 break
 
     def next_turn(self) -> None:
@@ -164,7 +164,7 @@ class Game():
             else:
                 self._turn = (self._turn - 1 + len(self._colors)) % len(self._colors)
             self._placement_count += 1
-            logger.debug("placement count=%d, next turn = %s" % (self._placement_count, self._colors[self._turn]))
+            logger.debug("placement_count=%d, next_turn = %s", self._placement_count, self._colors[self._turn])
 
             if self._placement_count == 2 * len(self._colors):
                 self.__end_initial_placement()
@@ -447,6 +447,7 @@ class Game():
         # now figure out whether this makes this road the longest road
 
         road_length = self._get_road_length(v1, color)
+        assert road_length <= p.get_num_roads()
         if not initial_placement:
             logger.debug(f"{color}'s new road has length {road_length}")
         if ((self._longest_road_player is None and road_length >= 5) or
@@ -459,7 +460,6 @@ class Game():
             logger.info(f"{color} now has longest road with a road length of {road_length}")
             self._longest_road_length = road_length
             self._longest_road_player = p
-            logger.info(f"{p} now has longest road card")
         if initial_placement:
             logger.info(f"{color} placed a road from {v1} to {v2}")
         else:
@@ -576,7 +576,7 @@ class Game():
         else:
             logger.info(f"{color} built a settlement at {v}")
         if initial_placement and p.get_num_settlements() == 2:
-            logger.info("Producing resources from second settlement...")
+            logger.debug("Producing resources from second settlement...")
             self.produce_resources_from_settlement(s)
 
     def get_players_on_hex(self, hex: Hex) -> List[str]:
@@ -725,15 +725,15 @@ class Game():
 
         if not self.can_move_robber(coords[0], coords[1]):
             raise Exception("cannot move the robber there")
-        logger.info("%s moved the robber to %d, %d", moving_player, coords[0], coords[1])
+        logger.info("%s moved the robber to (%d, %d)", moving_player, coords[0], coords[1])
         self._set_robber_hex(coords[0], coords[1])
         if steal_from_player:
             logger.info("%s stealing from %s", moving_player, steal_from_player)
             r = self._robber_steal(steal_from_player, moving_player)
             if r:
-                logger.debug("stole %s", r)
+                logger.info("%s stole %s", moving_player, r)
             else:
-                logger.debug("stole nothing")
+                logger.info("stole nothing")
         else:
             logger.info("%s not stealing from anyone", moving_player)
 
