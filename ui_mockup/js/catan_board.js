@@ -124,12 +124,11 @@ const CatanBoard = {
 
 		});
 
+		// for each hexId, add vertices in clockwise order starting from top left
 		const vertexMap = {};
 
-		const nodes = new Set();
-
-		for(let i = 0; i < this.numHexes; i++) {
-			let $hex = $("#board").find(`[data-hex-id=${i}]`);
+		for(let hexId = 0; hexId < this.numHexes; hexId++) {
+			let $hex = $("#board").find(`[data-hex-id=${hexId}]`);
 			const $left = $hex.find(".left");
 			const leftX = $left.position().left;
 			const rightX = $hex.width() + leftX;
@@ -137,56 +136,88 @@ const CatanBoard = {
 			const topY = $left.position().top;
 			const $middle = $hex.find(".middle");
 
-			// left-middle exact coords
-			const leftMiddle = [
+			const leftMiddle = new Point(
 				leftX,
 				topY + h / 2
-			];
-			nodes.add(leftMiddle);
+			);
 
-			const rightMiddle = [
+			const rightMiddle = new Point(
 				rightX,
 				topY + h / 2
-			];
-			nodes.add(rightMiddle);
+			);
 
-			// console.log($left.width());
-
-			const topLeft = [
+			const topLeft = new Point(
 				$middle.position().left,
 				topY
-			];
-			nodes.add(topLeft);
+			);
 
-			const topRight = [
+			const topRight = new Point(
 				$middle.position().left + $middle.width(),
 				topY,
-			];
-			nodes.add(topRight);
+			);
 
-			const bottomLeft = [
+			const bottomLeft = new Point(
 				$middle.position().left,
 				topY + h
-			];
-			nodes.add(bottomLeft);
+			);
 
-			const bottomRight = [
+			const bottomRight = new Point(
 				$middle.position().left + $middle.width(),
 				topY + h
+			);
+
+			vertexMap[hexId] = [
+				topLeft,
+				topRight,
+				rightMiddle,
+				bottomRight,
+				bottomLeft,
+				leftMiddle
 			];
-			nodes.add(bottomRight);
+		}
+
+		// because of the way I'm calculating the coordinates the values don't always sync up
+		// so now we have to construct a backwards map from each coordinate delete any overlapping coordinates
+		const nodes = [];
+
+		for(let hexId = 0; hexId < this.numHexes; hexId++) {
+			for(let vertex of vertexMap[hexId]) {
+				// if this vertex has not been drawn, then draw it
+				// NOTE: in practice only need to check adjacent hexes
+				// but that's not important here
+
+				let found = false;
+				for(let vertex2 of nodes) {
+					if(vertex.distanceTo(vertex2) <= this.settlementDotRadius) {
+						found = true;
+						break;
+					}
+				}
+				if(!found) {
+					nodes.push(vertex);
+				}
+			}
 		}
 
 		for(let node of nodes) {
 			let elem = $("<div></div>")
 				.addClass("future-settlement-node")
-				.css("left", node[0] - this.settlementDotRadius)
-				.css("top", node[1] - this.settlementDotRadius);
+				.css("left", node.x - this.settlementDotRadius)
+				.css("top", node.y - this.settlementDotRadius);
 			$("#board").append(elem);
 		}
-
-		// for each hex
 
 		return hexLattice;
 	}
 };
+
+class Point {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	distanceTo(p2) {
+		return Math.sqrt((this.x - p2.x) ** 2 + (this.y - p2.y) ** 2);
+	}
+}
