@@ -1,27 +1,29 @@
+/* global $ */
+/* exported Catan */
+
 /**
  * Written by Daniel Kats
  */
 
- // prototype a hash function for strings
- // taken from SO, slightly modified to be more readable
- // http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
-
-String.prototype.hashCode = function(){
-    var hash = 0, i, c;
-    if (this.length == 0) return hash;
-    for (i = 0; i < this.length; i++) {
-        c = this.charCodeAt(i);
-        hash = ((hash << 5) - hash) + c;
-        hash = hash & hash; // Convert to 32bit integer
-    }
+// prototype a hash function for strings
+// taken from SO, slightly modified to be more readable
+// http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
+String.prototype.hashCode = function () {
+	var hash = 0, i, c;
+	if (this.length == 0) return hash;
+	for (i = 0; i < this.length; i++) {
+		c = this.charCodeAt(i);
+		hash = ((hash << 5) - hash) + c;
+		hash = hash & hash; // Convert to 32bit integer
+	}
 
 	// admittedly not the best idea, but let's just take absolute value
-    return  Math.abs(hash);
+	return Math.abs(hash);
 };
 
 // namespace for catan stuff
 
-var Catan = {
+const Catan = {
 	//for now, player names come from here
 	player_names : ["fred", "george", "ron", "percy"],
 
@@ -234,7 +236,7 @@ var Catan = {
 	 */
 	add_resource_to_player: function(resource, player) {
 		// for now
-		console.log("[ROLL] " + player + " <-- " + resource)
+		console.log("[ROLL] " + player + " <-- " + resource);
 	},
 
 	/**
@@ -277,8 +279,8 @@ var Catan = {
 			var stat_name = this.player_stats[i];
 			var stat_id = (stat_name[0] + stat_name.split(" ")[1][0]).toLowerCase();
 			var stat = $(item).clone().addClass("player_stat_" + stat_id).removeClass("template");
-			$(stat).find(".player_stat_name").text(stat_name)
+			$(stat).find(".player_stat_name").text(stat_name);
 			$(parent).append(stat);
 		}
 	}
-}
+};

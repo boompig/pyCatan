@@ -1,4 +1,11 @@
-var CatanBoard = {
+/* global $ */
+/* exported CatanBoard */
+
+/**
+ * Generate the Catan board as HTML elements
+ */
+
+const CatanBoard = {
 
 	// as it maps this way...
 	board_layout: [3, 5, 5, 5, 4],

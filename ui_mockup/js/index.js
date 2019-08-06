@@ -1,3 +1,5 @@
+/* global $, Catan, CatanBoard */
+
 $(document).ready(function() {
 	//initially hide action tiles
 	$("#action_tile_container").hide();
@@ -6,7 +8,7 @@ $(document).ready(function() {
 
 	// set console to auto-scroll
 	// vanilla JS
-	var textarea = document.getElementById('console');
+	var textarea = document.getElementById("console");
 	textarea.scrollTop = textarea.scrollHeight;
 
 	set_action_button_events();

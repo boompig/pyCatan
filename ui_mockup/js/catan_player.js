@@ -1,25 +1,30 @@
-CatanPlayer = {
-	hand: {},
+/* global $ */
+/* exported CatanPlayer */
 
-	name: "",
+class CatanPlayer {
+	constructor() {
+		this.hand = {};
+		this.name = "";
+	}
 
-	get_hand: function() {
-		return this.hand
-	},
+	get_hand() {
+		return this.hand;
+	}
 
-	add_to_hand: function(resource) {
+	add_to_hand(resource) {
+		throw new Error("not implemented");
+	}
 
-	},
-
-	push: function(resource) {
-		var s = "";
-		var stat_id = "RC";
-		var tile_id = "player_tile_" + name.hashCode();
+	push(resource) {
+		const s = "";
+		const stat_id = "RC";
+		const tile_id = "player_tile_" + name.hashCode();
 
 		//$(tile_id).find(".player_stat_rc")text(this.get_num_resources());
-	},
+		throw new Error("not implemented");
+	}
 
-	get_num_resources: function() {
+	get_num_resources() {
 		var i = 0;
 
 		$.each(this.hand, function(resource, qty) {
@@ -28,4 +33,4 @@ CatanPlayer = {
 
 		return i;
 	}
-};
+}
