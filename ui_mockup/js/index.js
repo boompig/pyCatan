@@ -22,6 +22,8 @@ $(document).ready(function() {
 	Catan.generate_trade_panel();
 	Catan.generate_buy_buttons();
 	CatanBoard.generate_board();
+	const lattice = CatanBoard.compute_lattice();
+	console.log(lattice);
 });
 
 function set_trade_button_events() {

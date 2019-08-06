@@ -7,22 +7,48 @@
 
 const CatanBoard = {
 
-	// as it maps this way...
+	/*
+	 * The numbers refer to the number of hexes in each row
+	 * But a row in this case is a grouping of two adjacent rows
+	 * So the first value (3) = (1) + (2)
+	 */
 	board_layout: [3, 5, 5, 5, 4],
+
+	// different from the above in that it doesn't double-count
+	numTrueRows: 9,
+
+	numHexes: 19,
+
+	// see hex.css
+	settlementDotRadius: 10,
+
+	// filled in when generate_board is called
+	// mapping from hexId to array of hexes
+	adjacentHexes: {},
+
+	// mapping from hexId to hex
+	hexes: {},
+
+	// mapping from (trueRow, col) to hex
+	board: {},
 
 	/**
 	 * Generate some kind of board
+	 * "even" means those hexes that are on even rows
+	 * the rows are generated 2 at a time
+	 *
+	 * Store the true row value in data-true-row
 	 */
 	generate_board: function() {
-		console.log("called");
-
-		var board = $("#board");
-		var hex = $("#templates").find(".hex");
+		const $board = $("#board");
+		const hex = $("#templates").find(".hex");
 		var hex_row, hex_clone, j;
+		// not guaranteed to be in any kind of order, just used for uniqueness
+		let hexId = 0;
 
-		for (var i = 0; i < this.board_layout.length; i++) {
+		for (let i = 0; i < this.board_layout.length; i++) {
 			hex_row = $(document.createElement("div")).addClass("hex_row");
-			$(board).append(hex_row);
+			$($board).append(hex_row);
 
 			for(j = 0; j < 5 - this.board_layout[i]; j++) {
 				hex_clone = $(hex).clone().addClass("transparent");
@@ -35,13 +61,132 @@ const CatanBoard = {
 			}
 
 			for (; j < this.board_layout[i]; j++) {
-				hex_clone = $(hex).clone();
+				hex_clone = $(hex).clone().attr("data-hex-id", hexId)
+					.attr("data-col", j)
+					.attr("data-layout-row", i);
+				this.hexes[hexId] = hex_clone;
+				let trueRow;
 
 				if (j % 2 === 0) {
-					$(hex_clone).addClass("even");
+					trueRow = 2 * i;
+					$(hex_clone).addClass("even").attr("data-true-row", trueRow);
+				} else {
+					trueRow = (2 * i - 1);
+					$(hex_clone).addClass("odd").attr("data-true-row", trueRow);
 				}
+				this.board[`${trueRow},${j}`] = hex_clone;
+
 				$(hex_row).append(hex_clone);
+				hexId++;
 			}
 		}
+
+		// before exiting, fill in adjacent hexes
+		for(let hexId = 0; hexId < this.numHexes; hexId++) {
+			this.adjacentHexes[hexId] = [];
+			// get the hex
+			let $hex = this.hexes[hexId];
+			const trueRow = Number($hex.attr("data-true-row"));
+			const col = Number($hex.attr("data-col"));
+			// clockwise starting from 12 o'clock position
+			// guarantees that this.adjacentHexes will be in predictable order
+			const adj = [
+				[trueRow - 2, col],
+				[trueRow - 1, col + 1],
+				[trueRow + 1, col + 1],
+				[trueRow + 2, col],
+				[trueRow + 1, col - 1],
+				[trueRow - 1, col - 1],
+			];
+			for(let coord of adj) {
+				if(this.board[coord]) {
+					this.adjacentHexes[hexId].push(this.board[coord]);
+				}
+			}
+		}
+		console.log(this.adjacentHexes);
+	},
+
+	/**
+	 * Get the coordinates for each node on a settlement
+	 */
+	compute_lattice: function() {
+		const board = $("#board");
+		const hexLattice = [];
+
+		// construct the in-order hex lattice
+		$(board).find(".hex:not(.transparent)").each((i, elem) => {
+			const trueRow = Number($(elem).attr("data-true-row"));
+			if(!hexLattice[trueRow]) {
+				hexLattice[trueRow] = [];
+			}
+			hexLattice[trueRow].push(elem);
+
+		});
+
+		const vertexMap = {};
+
+		const nodes = new Set();
+
+		for(let i = 0; i < this.numHexes; i++) {
+			let $hex = $("#board").find(`[data-hex-id=${i}]`);
+			const $left = $hex.find(".left");
+			const leftX = $left.position().left;
+			const rightX = $hex.width() + leftX;
+			const h = $hex.height();
+			const topY = $left.position().top;
+			const $middle = $hex.find(".middle");
+
+			// left-middle exact coords
+			const leftMiddle = [
+				leftX,
+				topY + h / 2
+			];
+			nodes.add(leftMiddle);
+
+			const rightMiddle = [
+				rightX,
+				topY + h / 2
+			];
+			nodes.add(rightMiddle);
+
+			// console.log($left.width());
+
+			const topLeft = [
+				$middle.position().left,
+				topY
+			];
+			nodes.add(topLeft);
+
+			const topRight = [
+				$middle.position().left + $middle.width(),
+				topY,
+			];
+			nodes.add(topRight);
+
+			const bottomLeft = [
+				$middle.position().left,
+				topY + h
+			];
+			nodes.add(bottomLeft);
+
+			const bottomRight = [
+				$middle.position().left + $middle.width(),
+				topY + h
+			];
+			nodes.add(bottomRight);
+		}
+
+		for(let node of nodes) {
+			let elem = $("<div></div>")
+				.addClass("future-settlement-node")
+				.css("left", node[0] - this.settlementDotRadius)
+				.css("top", node[1] - this.settlementDotRadius);
+			$("#board").append(elem);
+		}
+
+		// for each hex
+
+		return hexLattice;
 	}
 };

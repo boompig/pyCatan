@@ -6,7 +6,7 @@ body {
 	margin: 0;
 	clear: both;
 	display: block;
-	
+
 	font-family: Helvetica, Couries MS, sans-serif;
 	font-size: .9em;
 }
@@ -18,10 +18,10 @@ body {
 	width: 800px;
 	height: 100%;
 	display: block;
-	
+
 	/* give some space at the top */
 	margin-top: 1em;
-	
+
 	clear: both;
 	padding: 0;
 }
@@ -30,10 +30,10 @@ body {
 /* the whole thing */
 #app_container{
 	display: inline-block;
-	
+
 	width: 100%;
 	clear: both;
-	
+
 	padding: 0;
 	margin: 0 auto;
 	margin-top: -50px;
@@ -46,7 +46,7 @@ button {
 	border-style: solid;
 	border-width: .2em;
 	border-color: #319FE8; /* very light blue */
-	
+
 	/*color: #319FE8; */
 	color: #000;
 	background-color: #fff;
@@ -68,9 +68,9 @@ button {
 	width: 15%;
 	display: inline;
 	height: 100%;
-	
+
 	text-align: center;
-	
+
 	/* Background image config */
 	background-position: left top;
 	background-repeat: no-repeat;
@@ -104,7 +104,7 @@ button {
 	margin-right: auto;
 	margin-top: .3em;
 	margin-bottom: .3em;
-	
+
 }
 
 /******************** END TRADE PANEL *****************/
@@ -114,7 +114,7 @@ button {
 #action_window {
 	width: 100%;
 	height: 100%;
-	
+
 	margin-top: 1em;
 	display: inline-block;
 }
@@ -129,7 +129,7 @@ button {
 	/*padding: .5em 1em;*/
 	width: 40%;
 	text-align: center;
-	
+
 	margin-right: .5em;
 	margin-top: .5em;
 }
@@ -167,7 +167,7 @@ button {
 	margin-left: auto;
 	margin-right: auto;
 	text-align: center;
-	
+
 	clear: both;
 	margin-bottom: .5em;
 	display: inline-block;
@@ -177,7 +177,7 @@ button {
 
 #console {
 	width: 100%;
-	margin: 0;
+	margin-top: 1rem;
 	padding: 0;
 	clear: both;
 	border-style: dashed;
@@ -185,7 +185,7 @@ button {
 	cursor: default;
 	text-align: left;
 	height: 100px;
-	
+
 	/* TODO text area should auto-scroll to the bottom */
 }
 /****************** END CONSOLE ***********************/

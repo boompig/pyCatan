@@ -49,3 +49,12 @@
 .hex.even {
     margin-top: 53px;
 }
+
+.future-settlement-node {
+    position: absolute;
+    border-radius: 50%;
+    background-color: black;
+    /* exactly half of this must be set in catan_board.js:settlementDotRadius */
+    width: 20px;
+    height: 20px;
+}
