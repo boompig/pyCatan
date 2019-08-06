@@ -7,93 +7,114 @@
 
 		<title>Catan UI Mockup</title>
 
+		<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
 		<!-- general CSS -->
 		<link rel="stylesheet" type="text/css" href="/css/style.css">
 		<link rel="stylesheet" type="text/css" href="/css/player_tiles.css">
 		<link rel="stylesheet" type="text/css" href="/css/hex.css">
 
-		<!-- JQuery -->
+	</head>
+	<body>
+		<main id="main">
+			<div>
+				<button type="button" class="btn btn-primary"
+					v-bind:class="{active: mapEditorOn}"
+					data-toggle="button" v-bind:aria-pressed="mapEditorOn" autocomplete="off"
+					v-on:click="toggleMapEditor()">Map Editor</button>
+			</div>
+
+			<div id="templates" style="display: none;">
+				<div class="resource_container">0
+					<!--<span class="resource_count">0</span>-->
+				</div> <!-- end resource container -->
+
+				<button class="buy_button">
+					<span class="buy_item_name"></span>
+					<span class="buy_item_cost">
+						<span class="resource_logo_small template"></span>
+					</span>
+				</button> <!-- end buy button-->
+
+				<div class="player_tile">
+					<div class="player_tile_banner">
+						<span class="player_color_square"></span>
+						<span class="player_name"></span>
+					</div>
+					<div class="player_stat_container">
+						<span class="player_stat template">
+							<span class="player_stat_name"></span>
+							<span class="player_stat_value">0</span>
+						</span>
+					</div> <!-- end player stats container -->
+				</div> <!-- end player tile -->
+
+				<div class="trade_resource_tile">
+					<button class="more_trade_button trade_button">+1</button>
+					<span class="trade_resource">
+						<span class="trade_resource_logo"></span>
+						<span class="trade_resource_amount">0</span>
+					</span> <!-- end trade resource -->
+					<button class="less_trade_button trade_button">-1</button>
+				</div> <!-- end trade resource tile -->
+
+				<div class="hex">
+					<div class="left"></div>
+					<div class="middle"></div>
+					<div class="right"></div>
+				</div>
+			</div> <!-- end templates -->
+
+			<div id="container">
+				<div id="app_container">
+					<div id="board">
+						<!--  auto-gen hexes go here -->
+					</div> <!-- end board -->
+					<div class="sidebar">
+						<div id="player_tile_container" v-show="!mapEditorOn">
+							<!-- auto-generated code here -->
+						</div><!-- end player tile container -->
+
+						<div id="action_window">
+							<div id="action_tile_container">
+								<!-- auto-generated code goes here -->
+							</div> <!-- end action tile container -->
+							<div id="action-buttons">
+								<div v-show="!mapEditorOn">
+									<button id="buy_button" class="btn btn-primary action_button">Buy</button>
+									<button id="trade_button" class="btn btn-info action_button">Trade</button>
+									<button id="end_turn_button" class="btn btn-danger action_button">End Turn</button>
+								</div>
+								<div v-show="mapEditorOn">
+									<button class="btn btn-primary">Place Settlement</button>
+									<button class="btn btn-primary">Place Road</button>
+								</div>
+							</div> <!-- end action buttons -->
+							<div id="trade-panel" v-show="showTradePanel">
+								<!-- auto-generated code goes here -->
+							</div>
+						</div> <!-- end action window -->
+					</div>
+				</div> <!-- end app container -->
+
+				<div id="resource_bar" v-show="!mapEditorOn">
+					<!-- auto-generated code here -->
+				</div> <!-- end resource bar -->
+
+				<textarea id="console" v-show="!mapEditorOn" readonly="readonly">
+					[SYS] Debug and game info gets printed here
+				</textarea>
+			</div> <!-- end container -->
+		</main>
+
+		<!-- libraries -->
 		<script src="/node_modules/jquery/dist/jquery.min.js"></script>
+		<!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+		<script src="lib/vue.js"></script>
 
 		<!-- Catan-related scripts -->
 		<script src="/js/catan.js"></script>
 		<script src="/js/catan_board.js"></script>
 		<script src="/js/catan_player.js"></script>
 		<script src="/js/index.js"></script>
-	</head>
-	<body>
-		<div id="templates" style="display: none;">
-			<div class="resource_container">0
-				<!--<span class="resource_count">0</span>-->
-			</div> <!-- end resource container -->
-
-			<button class="buy_button">
-				<span class="buy_item_name"></span>
-				<span class="buy_item_cost">
-					<span class="resource_logo_small template"></span>
-				</span>
-			</button> <!-- end buy button-->
-
-			<div class="player_tile">
-				<div class="player_tile_banner">
-					<span class="player_color_square"></span>
-					<span class="player_name"></span>
-				</div>
-				<div class="player_stat_container">
-					<span class="player_stat template">
-						<span class="player_stat_name"></span>
-						<span class="player_stat_value">0</span>
-					</span>
-				</div> <!-- end player stats container -->
-			</div> <!-- end player tile -->
-
-			<div class="trade_resource_tile">
-				<button class="more_trade_button trade_button">+1</button>
-				<span class="trade_resource">
-					<span class="trade_resource_logo"></span>
-					<span class="trade_resource_amount">0</span>
-				</span> <!-- end trade resource -->
-				<button class="less_trade_button trade_button">-1</button>
-			</div> <!-- end trade resource tile -->
-
-			<div class="hex">
-				<div class="left"></div>
-				<div class="middle"></div>
-				<div class="right"></div>
-			</div>
-		</div> <!-- end templates -->
-
-		<div id="container">
-			<div id="resource_bar">
-				<!-- auto-generated code here -->
-			</div> <!-- end resource bar -->
-
-			<div id="app_container">
-				<div id="board">
-					<!--  auto-gen hexes go here -->
-				</div> <!-- end board -->
-				<div id="player_tile_container">
-					<!-- auto-generated code here -->
-				</div><!-- end player tile container -->
-
-				<div id="action_window">
-					<div id="action_tile_container">
-						<!-- auto-generated code goes here -->
-					</div> <!-- end action tile container -->
-					<div id="action_buttons">
-						<button id="buy_button" class="action_button">Buy</button>
-						<button id="trade_button" class="action_button">Trade</button>
-						<button id="end_turn_button" class="action_button">End Turn</button>
-					</div> <!-- end action buttons -->
-					<div id="trade_panel">
-						<!-- auto-generated code goes here -->
-					</div>
-				</div> <!-- end action window -->
-			</div> <!-- end app container -->
-
-			<textarea id="console" readonly="readonly">
-				[SYS] Debug and game info gets printed here
-			</textarea>
-		</div> <!-- end container -->
 	</body>
 </html>

@@ -8,6 +8,7 @@
     "lint": "eslint js"
   },
   "dependencies": {
+    "bootstrap": "^4.3.1",
     "jquery": "^3.4.1"
   }
 }

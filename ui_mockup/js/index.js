@@ -1,15 +1,37 @@
-/* global $, Catan, CatanBoard */
+/* global $, Catan, CatanBoard, Vue */
+
+new Vue({
+	el: "#main",
+	data: {
+		mapEditorOn: false,
+
+		showTradePanel: false,
+	},
+	methods: {
+		toggleMapEditor: function() {
+			this.mapEditorOn = !this.mapEditorOn;
+			if(this.mapEditorOn) {
+				console.log("turned map editor on");
+			}
+		}
+	},
+	mounted: function() {
+		const textarea = document.getElementById("console");
+		if(textarea) {
+			textarea.scrollTop = textarea.scrollHeight;
+		}
+
+		Catan.generate_trade_panel();
+	}
+});
 
 $(document).ready(function() {
 	//initially hide action tiles
 	$("#action_tile_container").hide();
 	// initially hide trade panel
-	$("#trade_panel").hide();
 
 	// set console to auto-scroll
 	// vanilla JS
-	var textarea = document.getElementById("console");
-	textarea.scrollTop = textarea.scrollHeight;
 
 	set_action_button_events();
 

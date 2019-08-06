@@ -5,9 +5,11 @@
 
 .hex {
     float: left;
+    /* display: inline-block; */
     margin-right: -26px;
     margin-bottom: -50px;
 }
+
 .hex .left {
     float: left;
     width: 0;

@@ -86,7 +86,7 @@ const Catan = {
 
 	generate_trade_panel: function() {
 		var template = $("#templates .trade_resource_tile");
-		var parent = $("#trade_panel");
+		var parent = $("#trade-panel");
 		var resource, copy, tile_id;
 
 		for(var i = 0; i < this.resources.length; i++) {
