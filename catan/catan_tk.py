@@ -29,11 +29,15 @@ from typing import Dict, List
 logger = logging.getLogger(__name__)
 
 
-def get_hex_coords(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist) -> Vertices:
+def get_hex_coords(x_0: int, y_0: int,
+                   minor_horiz_dist: int, major_horiz_dist: int, minor_vert_dist: int) -> Vertices:
 	'''Given certain parameters for the hexagon, return tuple of vertices for hexagon.'''
 
 	# TODO move under class
 
+	# hex coordinates are always in the same order
+	# starting with middle-left and going counter-clockwise
+	# assume that +y == down and -y == up
 	return (
 		(x_0, y_0),
 		(x_0 + minor_horiz_dist, y_0 + minor_vert_dist),
@@ -59,7 +63,8 @@ def get_hex_row(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist, n
 	return hexes
 
 
-def get_hex_lattice(x_0, y_0, minor_horiz_dist, major_horiz_dist, minor_vert_dist) -> Lattice:
+def get_hex_lattice(x_0: int, y_0: int,
+                    minor_horiz_dist: int, major_horiz_dist: int, minor_vert_dist: int) -> Lattice:
 	'''Return a list of lists of hex coords.'''
 
 	# TODO move under class
@@ -324,7 +329,7 @@ class CatanApp():
 		frame.bind("<space>", self.roll)
 		frame.focus_set() # this is very important
 		frame.grid()
-		frame.master.title("Settlers of Catan: Whores and Wenches (custom expansion)")
+		frame.master.title("Settlers of Catan")
 		frame.pack()
 
 		# keeps index of turn

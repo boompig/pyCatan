@@ -58,7 +58,15 @@ class Game():
         self._settlements = {}  # type: Dict[Vertex, Settlement]
         self._roads = set([])  # type: Set[Edge]
 
+        # used in longest road calculation
+        # adjacency list
+        self._road_graph = {}  # type: Dict[str, Dict[Vertex, List[Vertex]]]
+
+        # map from vertices to adjacent hexes
+        # used for resource and robber calculations
         self._vertex_map = {}  # type: Dict[Vertex, List[Hex]]
+
+        # this is a set of *all* game vertices. this set never changes after board setup.
         self._vertex_set = set([])  # type: Set[Vertex]
         self._road_set = set([])  # type: Set[Edge]
         self._resource_map = {}  # type: Dict[int, List[Hex]]
@@ -69,7 +77,7 @@ class Game():
         self._colors = colors
         self._state = GameState.INITIAL_PLACEMENT
         self._hex_coord_lattice = hex_coord_lattice
-        self._hexes = {}  # type: Dict[Tuple[int, int], Hex]
+        self._hexes = {}  # type: Dict[HexCoord, Hex]
         # placement goes to the last player, then comes back
         # this variable keeps track of which way we're going
         self._placement_count = 0
@@ -112,7 +120,7 @@ class Game():
                 hex.set_coord((row_i, col_i))
                 self._hexes[(row_i, col_i)] = hex
 
-    def get_board(self) -> Dict[Tuple[int, int], Hex]:
+    def get_board(self) -> Dict[HexCoord, Hex]:
         return self._hexes
 
     @property
@@ -382,19 +390,6 @@ class Game():
         random.shuffle(deck)
         return deck
 
-    def draw_ascii(self):
-        '''Render the board in a terminal.'''
-
-        f = lambda hex: hex.get_token()
-
-        for row in self._board:
-            if len(row) == 3:
-                print(" ".join([f(c) for c in row]))
-            elif len(row) == 2:
-                print(" " + " ".join([f(c) for c in row]) + " ")
-            elif len(row) == 1:
-                print((2 * " ") + f(row[0]) + (2 * " "))
-
     def _prepare_data_structures(self) -> None:
         '''Create optimized data structures for easy access to some common game data.'''
         self._create_resource_map()
@@ -429,6 +424,7 @@ class Game():
         self.available_settlement_set.discard(v)
 
     def get_nodes(self) -> Set[Vertex]:
+        """Return a collection of all vertices on the board"""
         return self._vertex_set
 
     def _has_road(self, v1: Vertex, v2: Vertex) -> bool:
@@ -474,6 +470,13 @@ class Game():
             raise RoadPlacementError("cannot afford road")
 
         self._roads.add((v1, v2))
+
+        self._road_graph.setdefault(color, {})
+        self._road_graph[color].setdefault(v1, [])
+        self._road_graph[color][v1].append(v2)
+        self._road_graph[color].setdefault(v2, [])
+        self._road_graph[color][v2].append(v1)
+
         if not initial_placement:
             p.deduct_resources(cost)
         p.add_road(v1, v2)
@@ -709,6 +712,11 @@ class Game():
         logger.debug("Produced resources: %s", str(d))
         return d
 
+    def get_settlement_at_vertex(self, v: Vertex) -> Optional[Settlement]:
+        '''If there exists a settlement at this vertex, return the settlement
+        Otherwise return null'''
+        return self._settlements.get(v, None)
+
     def get_adjacent_vertices(self, v: Vertex) -> Set[Vertex]:
         '''Return all vertices adjacent to vertex v.'''
 
@@ -735,8 +743,14 @@ class Game():
             v_road_set = set([(v, v2) for v2 in self.get_adjacent_vertices(v)])
             self._road_set.update(v_road_set)
 
-    def get_roads(self) -> Set[Edge]:
-        return self._road_set
+    def get_roads_from_vertex(self, v: Vertex) -> List[Tuple[Edge, str]]:
+        l = []
+        for color in self._colors:
+            if v in self._road_graph[color]:
+                for v2 in self._road_graph[color][v]:
+                    road = self._normalize_road(v, v2)
+                    l.append((road, color))
+        return l
 
     def _get_hex_at_coords(self, row: int, col: int) -> Hex:
         '''Return hex object at the given coordinates.'''

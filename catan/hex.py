@@ -64,14 +64,9 @@ class Hex():
 		else:
 			return CatanUtils.get_num_token_dots(self._number)
 
-	def get_vertex(self, index):
-		if isinstance(index, int):
-			return self._vertices[index]
-		elif isinstance(index, str):
-			if index == "left":
-				return self._vertices[0]
-			elif index == "right":
-				return self._vertices[3]
+	def get_vertex(self, index: int):
+		assert self._vertices is not None
+		return self._vertices[index]
 
 	def get_center(self) -> Tuple[float, float]:
 		'''Return the center of this tile.'''
@@ -83,11 +78,11 @@ class Hex():
 
 	def get_top(self) -> int:
 		assert self._vertices is not None
-		return self._vertices[1][1]
+		return self._vertices[-1][1]
 
 	def get_bottom(self) -> int:
 		assert self._vertices is not None
-		return self._vertices[-1][1]
+		return self._vertices[1][1]
 
 	def get_left(self) -> int:
 		assert self._vertices is not None

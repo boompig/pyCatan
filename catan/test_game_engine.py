@@ -1,11 +1,12 @@
 from game_engine import Game, GameState
 import random
-from catan_tk import CatanApp
+from catan_tk import CatanApp, get_hex_lattice
 from typing import List
 from ai.dummy_ai import DummyAI
 from ai.smart_placement_ai import SmartPlacementAI
 import math
 from unittest import mock
+# import catan_cli_draw
 
 
 COLORS = ["orange", "yellow", "green", "red"]
@@ -17,6 +18,10 @@ def floor(x: float):
 
 
 def _automate_placement(ais, game: Game, colors: List[str]):
+	"""
+	This method can handle starting initial placement part-way through
+	So don't be afraid to pre-seed initial placement before calling this method
+	"""
 	l = []
 	MAX_TRIES = 100
 	tries = 0
@@ -365,3 +370,73 @@ def test_add_city():
 	game.add_city(v, color)
 
 	assert player.get_num_vp() == 3
+
+
+def test_longest_road():
+	random.seed(42)
+	color = COLORS[0]
+	# create a custom lattice
+	lattice = get_hex_lattice(
+		x_0=21,
+		y_0=7,
+		minor_horiz_dist=3,
+		major_horiz_dist=6,
+		minor_vert_dist=5
+	)
+	game = Game(color, COLORS, lattice)
+	ais = { color: DummyAI(color, game) for color in COLORS }
+
+	assert game.get_state() == GameState.INITIAL_PLACEMENT
+	assert game.get_current_color() == color
+
+	# for simplicity, start the first settlement at the very top and build your way down
+	# (0, 0) means row 0 and column 0
+	starting_hex = game.get_board()[(0, 0)]
+	# 5 -> top-left
+	starting_v = starting_hex.get_vertex(5)
+	game.add_settlement(starting_v, color, initial_placement=True)
+	# 0 -> middle-left
+	game.add_road(starting_v, starting_hex.get_vertex(0), color, initial_placement=True)
+	starting_v = starting_hex.get_vertex(0)
+	game.next_turn()
+
+	# automate the rest of the placement
+	_automate_placement(ais, game, COLORS)
+	player = game.get_player(color)
+
+	assert game.get_current_color() == color
+
+	assert player.get_num_vp() == 2
+
+	m = mock.MagicMock(return_value=1)
+	with mock.patch("random.randint", m):
+		roll = game.roll_dice()
+		assert roll == 2
+
+	# give the player enough money to buy 4 roads
+	player.add_resources(["brick"] * 4 + ["wood"] * 4)
+
+	assert player.get_num_vp() == 2
+
+	# place 4 roads, in order, going DOWN
+	for i in range(4):
+		vs = game.get_adjacent_vertices(starting_v)
+		next_v = None
+		# vertices are sorted by the y coordinate in increasing order
+		# therefore we prefer earlier vertices
+		for v in sorted(vs, key=lambda v: v[1], reverse=True):
+			if game.can_place_road(v, starting_v, color):
+				next_v = v
+				break
+		# try:
+		assert next_v is not None, f"Cannot place a road starting from {starting_v}"
+		# except AssertionError as e:
+		# 	catan_cli_draw.draw_ascii_hex_tokens(game)
+		# 	catan_cli_draw.draw_ascii_hex_nums(game)
+		# 	catan_cli_draw.draw_ascii_settlements(game)
+		# 	raise e
+		game.add_road(starting_v, next_v, color, initial_placement=False)
+		starting_v = next_v
+
+	assert player.has_special_card("longest road")
+	assert player.get_num_vp() == 4
