@@ -5,13 +5,18 @@ from catan_types import Vertex, Edge
 from catan_gen import CatanConstants
 
 
-class Player():
+class DevelopmentCardError(Exception):
+	pass
+
+
+class Player:
 	'''Single-player player.'''
 
-	def __init__(self) -> None:
+	def __init__(self, color) -> None:
 		'''Create a new Catan player.'''
 
 		self._resources = {}  # type: Dict[str, int]
+		self._color = color
 
 		# this variable stores the *permanent* victory points
 		# this does not include temporary victory points such as special cards
@@ -25,6 +30,9 @@ class Player():
 		self._dev_cards = {}  #type: Dict[str, int]
 		self._special_cards = set([])  # type: Set[str]
 		self._num_knights_played = 0
+
+	def get_color(self) -> str:
+		return self._color
 
 	def get_num_resources(self) -> int:
 		'''Return the number of resources in the player's hand.'''
@@ -90,6 +98,10 @@ class Player():
 
 	def get_settlements(self) -> List[Settlement]:
 		return self._settlement_order
+
+	def get_settlement_vertices(self) -> List[Vertex]:
+		"""Vertices are returned in no particular order"""
+		return [v for v in self._settlements.keys()]
 
 	def add_resources(self, resource_list: List[str]) -> None:
 		'''Collect resources.'''
@@ -173,9 +185,16 @@ class Player():
 	def get_development_card_vp(self) -> int:
 		return self._dev_card_vp
 
+	def get_num_knights_played(self) -> int:
+		return self._num_knights_played
+
 	def play_development_card(self, card: str) -> None:
 		'''Remove the given development card from development cards
-		This development is not a VP card'''
+		This development card is not a VP card.
+		NOTE: this does not actually play the card, only sets the card as played here'''
+
+		if card not in self._dev_cards or self._dev_cards[card] == 0:
+			raise DevelopmentCardError(f"This player does not have development card {card}")
 
 		self._dev_cards[card] -= 1
 		if card == "knight":
@@ -207,14 +226,3 @@ class Player():
 			vs.add(road[0])
 			vs.add(road[1])
 		return vs
-
-
-if __name__ == "__main__":
-	p = Player()
-	p.add_resources(["sheep"] * 3 + ["wheat"] * 2)
-	#print p.steal_resource()
-	#print p.steal_resource()
-	#print p.steal_resource()
-	#print p.steal_resource()
-
-	print(p.get_printable_hand())

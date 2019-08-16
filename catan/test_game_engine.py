@@ -134,7 +134,7 @@ def test_play_knight_card():
 		target_hex = game.get_hexes_for_vertex(green_settlement_v)[0]
 		game.play_development_card("orange", "knight", {
 			"target_color": "red",
-			"target_coords": target_hex.get_coord()
+			"target_hex": target_hex.get_coord()
 		})
 		assert game.get_player("red").get_num_resources() == red_count - 1
 		assert game.get_player("orange").get_num_resources() == orange_count + 1
@@ -281,3 +281,62 @@ def test_play_year_of_plenty():
 		})
 
 		assert player.get_num_resources() == n + 2
+
+
+def test_largest_army():
+	random.seed(42)
+	color = COLORS[0]
+	game = Game(color, COLORS, LATTICE)
+	ais = { color: DummyAI(color, game) for color in COLORS }
+	_automate_placement(ais, game, COLORS)
+	player = game.get_player(color)
+
+	# from the 2 initial settlements
+	assert player.get_num_vp() == 2
+
+	player.add_development_card("knight")
+	player.add_development_card("knight")
+	player.add_development_card("knight")
+
+	# after the initial placement need to find a list of distinct target hexes
+	target_hexes = {}
+	for c in COLORS[1:]:
+		p = game.get_player(c)
+		for v in p.get_settlement_vertices():
+			hexes = game.get_hexes_for_vertex(v)
+			for hex in hexes:
+				hex_coord = hex.get_coord()
+				if hex_coord not in target_hexes:
+					target_hexes[hex_coord] = c
+
+	for i in range(3 * len(COLORS)):
+		# make sure 7 not rolled
+		m = mock.MagicMock(return_value=1)
+		with mock.patch("random.randint", m):
+			roll = game.roll_dice()
+			assert roll == 2
+
+		if i % len(COLORS) == 0:
+			# remove the position of the current robber
+			robber_hex = game.get_robber_hex_coords()
+			if robber_hex in target_hexes:
+				target_hexes.pop(robber_hex)
+
+			# choose a random hex to target
+			target_hex = random.choice([hex for hex in target_hexes])
+			target_color = target_hexes[target_hex]
+
+			game.play_development_card("orange", "knight", {
+				"target_color": target_color,
+				"target_hex": target_hex
+			})
+			game.next_turn()
+		else:
+			# do nothing
+			game.next_turn()
+
+	assert player.get_num_knights_played() == 3
+	assert player.has_special_card("largest army")
+
+	# 2 from initial settlements and 2 from largest army
+	assert player.get_num_vp() == 4

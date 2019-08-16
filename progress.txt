@@ -25,9 +25,13 @@
 
 6. Development cards
 
-	- cannot play development cards (except VP cards)
-
-	- largest army card not implemented
+	- VP cards implemented
+	- year of plenty implemented
+	- monopoly implemented
+	- knight implemented
+	- road building implemented
+	- implemented rule where you can only play one development card per turn
+	- largest army implemented
 
 7. Initial placement
 	- DONE

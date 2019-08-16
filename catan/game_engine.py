@@ -76,6 +76,8 @@ class Game():
         self._robber_hex = (0, 0)  # type: Tuple[int, int]
         self._desert_pos = (0, 0)  # type: Tuple[int, int]
 
+        self._player_played_development_card = False
+
         # where do the special cards reside?
         self._longest_road_player = None  # type: Optional[Player]
         self._largest_army_player = None  # type: Optional[Player]
@@ -153,6 +155,7 @@ class Game():
             self.check_game_over()
             self._turn = (self._turn + 1) % len(self._colors)
             self._state = GameState.ROLL_DICE
+            self._player_played_development_card = False
         elif self._state == GameState.INITIAL_PLACEMENT:
             placement_dir_forward = self._placement_count < len(self._colors)
             if self._placement_count + 1 == len(self._colors):
@@ -194,15 +197,28 @@ class Game():
             else:
                 logger.debug("Tried to take %s from %s using monopoly but that player does not have any", target_resource, color)
 
-    def __play_knight_card(self, player_color: str, target_color: Optional[str], target_coords: HexCoord) -> None:
-        assert isinstance(target_coords, tuple)
+    def __play_knight_card(self, player_color: str, target_color: Optional[str], target_hex: HexCoord) -> None:
+        assert isinstance(target_hex, tuple)
         assert isinstance(player_color, str)
         assert self._state == GameState.GAMEPLAY, f"Error: current state is {self._state}"
         assert player_color != target_color
 
         self._state = GameState.ROBBER_PLACEMENT
-        self.move_robber(target_coords, target_color, player_color)
+        self.move_robber(target_hex, target_color, player_color)
         assert self._state == GameState.GAMEPLAY
+
+        # here we evaluate who has largest army
+        player = self._players[player_color]
+        n = player.get_num_knights_played()
+        if n >= 3 and n > self._largest_army_num_knights:
+            if self._largest_army_player and self._largest_army_player != player:
+                logging.info("%s lost largest army", self._largest_army_player.get_color())
+                self._largest_army_player.remove_special_card("largest army")
+            self._largest_army_num_knights = n
+            if self._largest_army_player != player:
+                self._largest_army_player = player
+                player.add_special_card("largest army")
+                logging.info("%s now has the largest army (%d)", player_color, n)
 
     def __play_year_of_plenty_card(self, player_color: str, resources: List[str]) -> None:
         assert self._state == GameState.GAMEPLAY
@@ -220,6 +236,7 @@ class Game():
     def play_development_card(self, color: str, card: str, params: dict):
         '''Player with given color plays given card. Process effects.'''
 
+        assert not self._player_played_development_card
         logger.info("%s played development card %s", color, card)
         player = self.get_player(color)
         player.play_development_card(card)
@@ -233,6 +250,10 @@ class Game():
             self.__play_road_building_card(color, **params)
         else:
             raise NotImplementedError(card)
+        self._player_played_development_card = True
+
+    def get_player_played_development_card(self) -> bool:
+        return self._player_played_development_card
 
     def get_player_vp(self, color: str) -> int:
         '''Return number of victory points for player of given color.'''
@@ -266,7 +287,7 @@ class Game():
         '''Create brand new players. For now, they are just placeholders.'''
 
         for color in colors:
-            self._players[color] = Player()
+            self._players[color] = Player(color)
 
     def get_player(self, color: str) -> Player:
         '''Return the player with the given color.'''

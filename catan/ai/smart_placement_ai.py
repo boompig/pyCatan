@@ -197,7 +197,7 @@ class SmartPlacementAI(AI):
 					card,
 					{
 						"target_color": placement[0],
-						"target_coords": placement[1]
+						"target_hex": placement[1]
 					}
 				)
 				# pick the best hex that doesn't have a settlement of mine on it

@@ -29,7 +29,8 @@ class Hex():
 	def set_coord(self, coord: HexCoord) -> None:
 		self._coord = coord
 
-	def get_coord(self):
+	def get_coord(self) -> HexCoord:
+		assert self._coord is not None
 		return self._coord
 
 	def set_vertices(self, vertices: Vertices) -> None:

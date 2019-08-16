@@ -2,13 +2,18 @@ from ai.smart_placement_ai import SmartPlacementAI
 from game_engine import Game
 from catan_tk import CatanApp
 
+LATTICE = CatanApp.get_hex_coord_lattice()
+COLORS = ["red", "orange", "green", "blue"]
 
-def test_robber():
-	lattice = CatanApp.get_hex_coord_lattice()
+
+def test_robber_discard():
+	"""
+	Make sure that robber_discard does in fact discard down to 7 cards
+	"""
 	game = Game(
 		starting_color="orange",
-		colors=["red", "orange", "green", "blue"],
-		hex_coord_lattice=lattice
+		colors=COLORS,
+		hex_coord_lattice=LATTICE
 	)
 	color = game.get_current_color()
 	player = game.get_player(color)

@@ -102,7 +102,7 @@ class App():
     def create_players(self):
         self._players = {}
         for c in self.colors:
-            self._players[c] = Player()
+            self._players[c] = Player(c)
 
     def roll(self):
         n = random.randint(1, 6)
