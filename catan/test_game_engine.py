@@ -340,3 +340,28 @@ def test_largest_army():
 
 	# 2 from initial settlements and 2 from largest army
 	assert player.get_num_vp() == 4
+
+
+def test_add_city():
+	random.seed(42)
+	color = COLORS[0]
+	game = Game(color, COLORS, LATTICE)
+	ais = { color: DummyAI(color, game) for color in COLORS }
+	_automate_placement(ais, game, COLORS)
+	player = game.get_player(color)
+
+	m = mock.MagicMock(return_value=1)
+	with mock.patch("random.randint", m):
+		roll = game.roll_dice()
+		assert roll == 2
+
+	# add enough resources to upgrade a settlement to a city
+	player.add_resources(["wheat"] * 2 + ["ore"] * 3)
+	# pick a random city for this player, doesn't matter which one
+	v = random.choice(player.get_settlement_vertices())
+
+	assert player.get_num_vp() == 2
+
+	game.add_city(v, color)
+
+	assert player.get_num_vp() == 3
