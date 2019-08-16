@@ -36,4 +36,9 @@ def test_robber_discard():
 	"""Just make sure this method works"""
 	game = Game("red", COLORS, LATTICE)
 	ai = DummyAI("red", game)
+	player = game.get_player("red")
+	resources = ["ore"] * 4 + ["wheat"] * 5 + ["brick"] * 3
+	player.add_resources(resources)
+	assert player.get_num_resources() > 7
 	ai.robber_discard(game)
+	assert player.get_num_resources() <= 7
