@@ -440,3 +440,15 @@ def test_longest_road():
 
 	assert player.has_special_card("longest road")
 	assert player.get_num_vp() == 4
+
+
+def test_get_road_length_initial():
+	random.seed(42)
+	game = Game(COLORS[0], COLORS, LATTICE)
+	ais = { color: DummyAI(color, game) for color in COLORS }
+	_automate_placement(ais, game, COLORS)
+
+	for color in COLORS:
+		p = game.get_player(color)
+		for v in p.get_settlement_vertices():
+			assert game.get_road_length(v, color) == 1

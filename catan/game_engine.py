@@ -482,7 +482,8 @@ class Game():
         p.add_road(v1, v2)
         # now figure out whether this makes this road the longest road
 
-        road_length = self._get_road_length(v1, color)
+        road_length = self.get_road_length(v1, color)
+        assert road_length <= p.get_num_roads()
         if not initial_placement:
             logger.debug(f"{color}'s new road has length {road_length}")
         if ((self._longest_road_player is None and road_length >= 5) or
@@ -501,29 +502,50 @@ class Game():
         else:
             logger.info(f"{color} built a road from {v1} to {v2}")
 
-    def _get_road_length(self, starting_vertex: Vertex, color: str, visited: Optional[Set[Vertex]] = None) -> int:
-        '''Get the longest portion of this road starting from the given vertex'''
-        if visited is None:
-            visited = set([])
-        visited.add(starting_vertex)
-        lengths = []
-        # first, find all the adjacent vertices
-        player = self.get_player(color)
-        for v2 in self.get_adjacent_vertices(starting_vertex):
-            if v2 in visited:
-                continue
-            if player.has_road_to(v2):
-                visited2 = visited.copy()
-                lengths.append(1 + self._get_road_length(v2, color, visited2))
 
-        # highest lengths first
-        lengths.sort(reverse=True)
-        if lengths == []:
-            return 0
-        elif len(lengths) == 1:
-            return lengths[0]
-        else:
-            return lengths[0] + lengths[1]
+    def _get_farthest_vertex(self, v: Vertex, color: str) -> Tuple[Vertex, int]:
+        """
+        """
+        # modified DFS
+        # this helps find the longest path
+        open = deque()  # type: deque
+        open.append(([v], 0))
+
+        farthest_vertex = None
+        farthest_vertex_dist = -1
+
+        while len(open) > 0:
+            path, length = open.pop()
+            v1 = path[-1]
+            if length > farthest_vertex_dist:
+                farthest_vertex_dist = length
+                farthest_vertex = v1
+
+            # at this point, we check if v1 - <anything> represents a broken road
+            # NOTE: v1 was previously a destination, which is totally fine
+            # but now it's a source, so we have to check
+            s = self.get_settlement_at_vertex(v1)
+            if s and s.color() != color:
+                logging.debug("There is a settlement of color %s at %s so cannot transit via this vertex for longest road",
+                              s.color(), v1)
+                continue
+
+            for v2 in self._road_graph[color][v1]:
+                if v2 not in path:
+                    path2 = path.copy()
+                    path2.append(v2)
+                    open.append((path2, length + 1))
+
+        assert farthest_vertex is not None
+        return (farthest_vertex, farthest_vertex_dist)
+
+    def get_road_length(self, starting_vertex: Vertex, color: str) -> int:
+        '''Get the longest portion of this road starting from the given vertex'''
+
+        far_1, _ = self._get_farthest_vertex(starting_vertex, color)
+        logging.debug("Farthest vertex from %s for color %s is %s", starting_vertex, color, far_1)
+        _, dist_2 = self._get_farthest_vertex(far_1, color)
+        return dist_2
 
     def has_road(self, v1: Vertex, v2: Vertex) -> bool:
         '''Return true iff a road from v1 to v2 has already been built.
