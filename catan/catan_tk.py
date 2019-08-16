@@ -838,8 +838,8 @@ class CatanApp():
 		self._settlements = {}
 		self._roads = {}
 		self._canvas = canvas
-		for road in self._map.get_roads():
-			self.draw_road_placeholder(canvas, road[0], road[1])
+		for edge in self._map.get_edges():
+			self.draw_road_placeholder(canvas, edge[0], edge[1])
 
 		for v in self._map.get_nodes():
 			self.draw_settlement_node(canvas, v)
