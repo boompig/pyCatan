@@ -306,13 +306,12 @@ class Game():
         '''Assign tokens to the tiles on the board.'''
 
         # a reversed list of letters (so pop operation works)
-        letters = deque(reversed(sorted(CatanConstants.token_map.keys())))
+        # so higher numbers go first
+        letters = deque(sorted(CatanConstants.token_map.keys(), reverse=True))
         unplaced_layout = { row : col for row, col in enumerate(CatanConstants.tile_layout) }
 
-        # start in corner (0, 2)
         row = 2
         col = 0
-        #print min(unplaced_layout.keys())
 
         # do this for all the letters
         while len(letters) > 0:

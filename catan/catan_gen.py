@@ -110,11 +110,13 @@ def flatten_list(l: List[List[str]]) -> List[str]:
 class CatanConstants():
 	'''Keep constants under one namespace.'''
 
+	# map from "special cards" to the points they give
 	special_card_points = {
 		"longest road": 2,
 		"largest army": 2
 	}
 
+	# map from development card names to their quantity
 	development_cards = {
 		"knight": 14,
 		"VP" : 5,
@@ -131,7 +133,7 @@ class CatanConstants():
 		"road" : ["brick", "wood"]
 	}
 
-	'''The number of tiles each resource has on a standard Catan board.'''
+	# The number of tiles each resource has on a standard Catan board
 	resource_distribution = {
 		"brick" : 3,
 		"ore" : 3,
@@ -141,8 +143,8 @@ class CatanConstants():
 		"desert" : 1,
 	}
 
-	'''The layout of the tiles on a Catan board.
-	Each entry represents number of tiles in successive row.'''
+	# The layout of the tiles on a Catan board.
+	# Each entry represents number of tiles in successive row
 	tile_layout = (
 		1,
 		2,
@@ -155,7 +157,16 @@ class CatanConstants():
 		1,
 	)
 
-	'''The way the tokens normally ride...'''
+	# NOTE: this is the same layout as the above but flipped 90 degrees
+	tile_layout_alt = (
+		3,
+		4,
+		5,
+		4,
+		3
+	)
+
+	# token letters map to numbers
 	token_map = {
 		"a" : 5,
 		"b" : 2,

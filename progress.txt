@@ -37,10 +37,12 @@
 	- DONE
 
 8. Robber
-	- difficulty in dragging object - not sure Tkinter has explicit support for this
+	- robber exists
+	- robber can be moved on a 7
+	- robber can be moved when Knight card played
+	- players must discard on 7
 
 	- TODO create sprite
-	- TODO allow card discarding
 
 9. GUI
 	- create a "God" window which shows contents of each player's hand similar to what exists now

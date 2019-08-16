@@ -1,0 +1,24 @@
+1. Do you have to steal from another player when you move the robber?
+
+https://boardgames.stackexchange.com/questions/9102/avoiding-stealing-a-resource-when-moving-the-robber-in-catan
+
+- basically NO, but you *can* choose to steal from a player who has no resources
+
+2. Can you steal from yourself when moving the robber?
+
+NO
+https://boardgames.stackexchange.com/questions/34788/in-catan-is-it-possible-to-steal-from-yourself-with-the-robber
+
+3. Do you have to move the robber?
+
+YES
+https://www.catan.com/faq/4651-seven-and-robber-do-i-have-place-robber-different-hex-after-7-was-rolled-or-may-i-briefly
+
+4. Can you move the robber to the desert?
+
+YES
+https://www.catan.com/faq/4656-seven-and-robber-if-i-move-robber-desert-do-i-draw-card-owner-adjacent-settlement-or-city
+
+5. Must the road from the placement of the second settlement connect to the second settlement?
+
+YES - it's in the rules
