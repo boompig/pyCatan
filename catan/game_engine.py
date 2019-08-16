@@ -853,6 +853,9 @@ class Game():
         # TODO: this is very sketchy because returning the main board data structure
         return self._board
 
+    def get_roads(self) -> Set[Edge]:
+        return self._road_set
+
     def get_state(self) -> GameState:
         return self._state
 

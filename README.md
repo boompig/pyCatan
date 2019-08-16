@@ -20,7 +20,7 @@ I recently rediscovered this code and I am in the process of rehabilitating it
 To run with Tkinter graphics, run
 
 ```
-python catan_tk.py
+python catan/catan_tk.py
 ```
 
 There is a partially-implemented loading screen in `ui/load_screen.py`.
