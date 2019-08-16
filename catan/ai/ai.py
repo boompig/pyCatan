@@ -1,7 +1,6 @@
 from game_engine import Game
 from catan_types import Vertex, Edge, HexCoord
 from typing import Optional, List, Tuple
-from hex import Hex
 
 
 class AI:

@@ -3,6 +3,14 @@
 This is an implementation and visualization of Settlers of Catan in Python.
 You can find the [rules for this game here][https://www.catan.com/files/downloads/catan_5th_ed_rules_eng_150303.pdf]
 
+## Test
+
+Use this to get a coverage report.
+
+```
+pytest catan --cov=catan --cov-report=html
+```
+
 ## Disclaimer
 
 WARNING: this code is very old.

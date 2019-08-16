@@ -5,6 +5,13 @@ venv3
 *.pyc
 .mypy_cache/
 monkeytype.sqlite3
+.pytest_cache
+.coverage
+htmlcov
+
+# node auto-generate garbage
+node_modules
 
 # editor
 .vscode/
+*.code-workspace

@@ -288,7 +288,7 @@ class CatanApp():
 		#destination_hex_sprite = self._canvas.find_withtag("hex_{}_{}".format(row, col))
 		model_hex = self._map._board[row][col]
 
-		if self._map.can_move_robber(row, col):
+		if self._map.can_move_robber((row, col)):
 			self.move_robber_to_hex_ui(model_hex)
 			self._map.move_robber((row, col), target_color, color)
 			self.steal_from_player_ui(target_color)

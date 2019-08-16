@@ -41,6 +41,7 @@ class GameState(Enum):
     INITIAL_PLACEMENT = auto()
     ROLL_DICE = auto()
     GAMEPLAY = auto()
+    ROBBER_PLACEMENT = auto()
 
 
 class Game():
@@ -127,7 +128,10 @@ class Game():
         color = self.get_current_color()
         logger.debug("%s rolled %d", color, roll)
         self._produce_resources_from_roll(roll)
-        self._state = GameState.GAMEPLAY
+        if roll == 7:
+            self._state = GameState.ROBBER_PLACEMENT
+        else:
+            self._state = GameState.GAMEPLAY
         return roll
 
     def check_game_over(self):
@@ -173,6 +177,8 @@ class Game():
         return self._colors[self._turn]
 
     def __play_monopoly_card(self, player_color: str, target_resource: str) -> None:
+        assert self._state == GameState.GAMEPLAY
+
         receiving_player = self.get_player(player_color)
         for color, player in self._players.items():
             if color == player_color:
@@ -191,15 +197,21 @@ class Game():
     def __play_knight_card(self, player_color: str, target_color: Optional[str], target_coords: HexCoord) -> None:
         assert isinstance(target_coords, tuple)
         assert isinstance(player_color, str)
+        assert self._state == GameState.GAMEPLAY, f"Error: current state is {self._state}"
+        assert player_color != target_color
 
+        self._state = GameState.ROBBER_PLACEMENT
         self.move_robber(target_coords, target_color, player_color)
+        assert self._state == GameState.GAMEPLAY
 
     def __play_year_of_plenty_card(self, player_color: str, resources: List[str]) -> None:
+        assert self._state == GameState.GAMEPLAY
         assert len(resources) == 2
         player = self.get_player(player_color)
         player.add_resources(resources)
 
     def __play_road_building_card(self, player_color: str, roads: List[Edge]) -> None:
+        assert self._state == GameState.GAMEPLAY
         assert len(roads) == 2
         for road in roads:
             # initial_placement as a way to avoid paying a price
@@ -710,7 +722,7 @@ class Game():
 
         return self._board[row][col]
 
-    def get_robber_hex_coords(self) -> Tuple[int, int]:
+    def get_robber_hex_coords(self) -> HexCoord:
         return self._robber_hex
 
     def get_robber_hex(self) -> Hex:
@@ -719,14 +731,19 @@ class Game():
         #return self._robber_hex
         return self._get_hex_at_coords(*self._robber_hex)
 
-    def move_robber(self, coords: Tuple[int, int], steal_from_player: Optional[str], moving_player: str):
-        assert isinstance(coords, tuple) and len(coords) == 2 and isinstance(coords[0], int)
+    def move_robber(self, hex_coord: HexCoord, steal_from_player: Optional[str], moving_player: str):
+        """
+        This method can only be called in the ROBBER_PLACEMENT state
+        Always transitions to the GAMEPLAY state
+        """
+        assert isinstance(hex_coord, tuple) and len(hex_coord) == 2 and isinstance(hex_coord[0], int)
         assert isinstance(moving_player, str)
+        assert self._state == GameState.ROBBER_PLACEMENT
 
-        if not self.can_move_robber(coords[0], coords[1]):
+        if not self.can_move_robber(hex_coord):
             raise Exception("cannot move the robber there")
-        logger.info("%s moved the robber to %d, %d", moving_player, coords[0], coords[1])
-        self._set_robber_hex(coords[0], coords[1])
+        logger.info("%s moved the robber to %d, %d", moving_player, hex_coord[0], hex_coord[1])
+        self._set_robber_hex(hex_coord)
         if steal_from_player:
             logger.info("%s stealing from %s", moving_player, steal_from_player)
             r = self._robber_steal(steal_from_player, moving_player)
@@ -736,17 +753,20 @@ class Game():
                 logger.debug("stole nothing")
         else:
             logger.info("%s not stealing from anyone", moving_player)
+        self._state = GameState.GAMEPLAY
 
-    def can_move_robber(self, row: int, col: int) -> bool:
+    def can_move_robber(self, hex_coord: HexCoord) -> bool:
+        row, col = hex_coord
         if (row, col) == self._robber_hex:
             return False
         return True
 
-    def _set_robber_hex(self, row: int, col: int) -> None:
+    def _set_robber_hex(self, hex_coord: HexCoord) -> None:
         '''Set the position of the robber.
         Cannot be same as old position.
         '''
-        self._robber_hex = (row, col)
+        assert hex_coord != self._robber_hex
+        self._robber_hex = hex_coord
 
     def _robber_steal(self, from_player: str, to_player: str) -> Optional[str]:
         '''Robber steals from from_player and gives to to_player.

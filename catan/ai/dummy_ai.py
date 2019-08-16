@@ -1,11 +1,9 @@
 from game_engine import Game
 import random
-from typing import List, Optional, Set, Iterator, Tuple
+from typing import List, Optional, Tuple
 from catan_types import Vertex, Edge, HexCoord
-from catan_gen import CatanConstants
 import logging
 from .ai import AI
-from hex import Hex
 
 
 logger = logging.getLogger(__name__)
