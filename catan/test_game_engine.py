@@ -7,10 +7,12 @@ from ai.smart_placement_ai import SmartPlacementAI
 import math
 from unittest import mock
 # import catan_cli_draw
+import logging
 
 
 COLORS = ["orange", "yellow", "green", "red"]
 LATTICE = CatanApp.get_hex_coord_lattice()
+logging.basicConfig(level=logging.DEBUG)
 
 
 def floor(x: float):
@@ -128,21 +130,29 @@ def test_play_knight_card():
 		roll = game.roll_dice()
 		assert roll == 2
 
-		player = game.get_player("orange")
-		player.add_development_card("knight")
-		red_count = game.get_player("red").get_num_resources()
-		orange_count = game.get_player("orange").get_num_resources()
-		green_player = game.get_player("green")
-		# this should always be true regardless of placement
-		assert green_player.get_num_resources() >= 1
-		green_settlement_v = green_player.get_settlement(0).vertex()
-		target_hex = game.get_hexes_for_vertex(green_settlement_v)[0]
-		game.play_development_card("orange", "knight", {
-			"target_color": "red",
-			"target_hex": target_hex.get_coord()
-		})
-		assert game.get_player("red").get_num_resources() == red_count - 1
-		assert game.get_player("orange").get_num_resources() == orange_count + 1
+	player = game.get_player("orange")
+	player.add_development_card("knight")
+	red_player = game.get_player("red")
+	red_count = red_player.get_num_resources()
+	orange_count = game.get_player("orange").get_num_resources()
+	# this should always be true regardless of placement
+	assert red_player.get_num_resources() >= 1
+	red_settlement_v = red_player.get_settlement(0).vertex()
+
+	robber_hex = game.get_robber_hex()
+	target_hex = None
+	for hex in game.get_hexes_for_vertex(red_settlement_v):
+		if hex != robber_hex:
+			target_hex = hex
+			break
+	assert target_hex is not None, "Nowhere to place robber"
+
+	game.play_development_card("orange", "knight", {
+		"target_color": "red",
+		"target_hex": target_hex.get_coord()
+	})
+	assert game.get_player("red").get_num_resources() == red_count - 1
+	assert game.get_player("orange").get_num_resources() == orange_count + 1
 
 
 def test_play_monopoly_card():
@@ -161,44 +171,44 @@ def test_play_monopoly_card():
 		roll = game.roll_dice()
 		assert roll == 2
 
-		orange_player = game.get_player("orange")
-		orange_player.add_development_card("monopoly")
-		orange_hand = orange_player.get_hand()
-		# remove any ore in the source player's hand
-		if "ore" in orange_hand:
-			orange_player.deduct_resources(["ore"] * orange_hand["ore"])
+	orange_player = game.get_player("orange")
+	orange_player.add_development_card("monopoly")
+	orange_hand = orange_player.get_hand()
+	# remove any ore in the source player's hand
+	if "ore" in orange_hand:
+		orange_player.deduct_resources(["ore"] * orange_hand["ore"])
+		assert orange_player.get_hand().get("ore", 0) == 0
 
-		total = 0
-		old_totals = {}
-		num_ores = {}
-		for color in game.get_colors():
-			player = game.get_player(color)
-			if color == "orange":
-				old_totals[color] = player.get_num_resources()
-				continue
-			hand = player.get_hand()
-			if "ore" in hand:
-				player.deduct_resources(["ore"] * hand["ore"])
-			assert hand.get("ore", 0) == 0
-			n = random.randint(1, 10)
-			player.add_resources(["ore"] * n)
+	total = 0
+	old_totals = {}
+	num_ores = {}
+	for color in game.get_colors():
+		player = game.get_player(color)
+		if color == "orange":
 			old_totals[color] = player.get_num_resources()
-			assert player.get_hand()["ore"] == n
-			num_ores[color] = n
-			total += n
+			continue
+		hand = player.get_hand()
+		if "ore" in hand:
+			player.deduct_resources(["ore"] * hand["ore"])
+		assert player.get_hand().get("ore", 0) == 0
+		n = random.randint(1, 10)
+		player.add_resources(["ore"] * n)
+		old_totals[color] = player.get_num_resources()
+		assert player.get_hand()["ore"] == n
+		num_ores[color] = n
+		total += n
 
-		game.play_development_card("orange", "monopoly", {
-			"target_resource": "ore"
-		})
-		for color in game.get_colors():
-			print(color)
-			player = game.get_player(color)
-			if color == "orange":
-				assert player.get_hand().get("ore", 0) == total
-				assert player.get_num_resources() == old_totals["orange"] + total
-			else:
-				assert player.get_hand().get("ore", 0) == 0
-				assert player.get_num_resources() == old_totals[color] - num_ores[color]
+	game.play_development_card("orange", "monopoly", {
+		"target_resource": "ore"
+	})
+	for color in game.get_colors():
+		player = game.get_player(color)
+		if color == "orange":
+			assert player.get_hand().get("ore", 0) == total
+			assert player.get_num_resources() == old_totals["orange"] + total
+		else:
+			assert player.get_hand().get("ore", 0) == 0
+			assert player.get_num_resources() == old_totals[color] - num_ores[color]
 
 
 def test_play_road_building_card():

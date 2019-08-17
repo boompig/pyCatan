@@ -84,6 +84,10 @@ class Game():
         self._robber_hex = (0, 0)  # type: Tuple[int, int]
         self._desert_pos = (0, 0)  # type: Tuple[int, int]
 
+        # ports map location to the type of port
+        # generic ports have type "generic"
+        self._ports = {}  # type: Dict[Vertex, str]
+
         self._player_played_development_card = False
 
         # where do the special cards reside?
@@ -105,8 +109,61 @@ class Game():
             self._dev_card_deck.extend([card] * num)
         random.shuffle(self._dev_card_deck)
 
+    def _generate_ports(self) -> None:
+        '''Place ports on the board'''
+
+        port_locations = [
+            [
+                self._board[1][0].get_vertex(4),
+                self._board[1][0].get_vertex(5)
+            ],
+            [
+                self._board[2][0].get_vertex(5),
+                self._board[2][0].get_vertex(0)
+            ],
+            [
+                self._board[4][0].get_vertex(0),
+                self._board[4][0].get_vertex(1)
+            ],
+            [
+                self._board[7][0].get_vertex(0),
+                self._board[7][0].get_vertex(1)
+            ],
+            [
+                self._board[8][0].get_vertex(1),
+                self._board[8][0].get_vertex(2)
+            ],
+            [
+                self._board[7][-1].get_vertex(2),
+                self._board[7][-1].get_vertex(3)
+            ],
+            [
+                self._board[4][-1].get_vertex(2),
+                self._board[4][-1].get_vertex(3)
+            ],
+            [
+                self._board[2][-1].get_vertex(3),
+                self._board[2][-1].get_vertex(4)
+            ],
+            [
+                self._board[1][-1].get_vertex(4),
+                self._board[1][-1].get_vertex(5)
+            ]
+        ]
+
+        ports = []
+        for port_type, n in CatanConstants.port_distribution.items():
+            ports.extend([port_type] * n)
+        random.shuffle(ports)
+        assert len(ports) == len(port_locations)
+
+        for port_type, location in zip(ports, port_locations):
+            for vertex in location:
+                self._ports[vertex] = port_type
+
     def _generate_board(self) -> None:
-        '''Generate the board randomly'''
+        '''Generate the board randomly
+        Includes generating port positions'''
         # create hexes with resources, shuffle
         tile_deck = self._get_random_tile_deck()
         # arrange deck on the board (so create placement)
@@ -119,6 +176,7 @@ class Game():
                 hex.set_vertices(self._hex_coord_lattice[row_i][col_i])
                 hex.set_coord((row_i, col_i))
                 self._hexes[(row_i, col_i)] = hex
+        self._generate_ports()
 
     def get_board(self) -> Dict[HexCoord, Hex]:
         return self._hexes
@@ -220,13 +278,13 @@ class Game():
         n = player.get_num_knights_played()
         if n >= 3 and n > self._largest_army_num_knights:
             if self._largest_army_player and self._largest_army_player != player:
-                logging.info("%s lost largest army", self._largest_army_player.get_color())
+                logger.info("%s lost largest army", self._largest_army_player.get_color())
                 self._largest_army_player.remove_special_card("largest army")
             self._largest_army_num_knights = n
             if self._largest_army_player != player:
                 self._largest_army_player = player
                 player.add_special_card("largest army")
-                logging.info("%s now has the largest army (%d)", player_color, n)
+                logger.info("%s now has the largest army (%d)", player_color, n)
 
     def __play_year_of_plenty_card(self, player_color: str, resources: List[str]) -> None:
         assert self._state == GameState.GAMEPLAY
@@ -525,7 +583,7 @@ class Game():
             # but now it's a source, so we have to check
             s = self.get_settlement_at_vertex(v1)
             if s and s.color() != color:
-                logging.debug("There is a settlement of color %s at %s so cannot transit via this vertex for longest road",
+                logger.debug("There is a settlement of color %s at %s so cannot transit via this vertex for longest road",
                               s.color(), v1)
                 continue
 
@@ -542,7 +600,7 @@ class Game():
         '''Get the longest portion of this road starting from the given vertex'''
 
         far_1, _ = self._get_farthest_vertex(starting_vertex, color)
-        logging.debug("Farthest vertex from %s for color %s is %s", starting_vertex, color, far_1)
+        logger.debug("Farthest vertex from %s for color %s is %s", starting_vertex, color, far_1)
         _, dist_2 = self._get_farthest_vertex(far_1, color)
         return dist_2
 
@@ -813,7 +871,8 @@ class Game():
 
     def can_move_robber(self, hex_coord: HexCoord) -> bool:
         row, col = hex_coord
-        if (row, col) == self._robber_hex:
+        if hex_coord == self._robber_hex:
+            logger.debug("Cannot move the robber to same hex on which it is standing")
             return False
         return True
 

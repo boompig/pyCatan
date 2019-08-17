@@ -166,6 +166,17 @@ class CatanConstants():
 		3
 	)
 
+	# note that the distribution is actually 2x this
+	# because each port has 2 entrances
+	port_distribution = {
+		"generic": 4,
+		"brick": 1,
+		"ore": 1,
+		"sheep": 1,
+		"wood": 1,
+		"wheat": 1
+	}
+
 	# token letters map to numbers
 	token_map = {
 		"a" : 5,

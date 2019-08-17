@@ -3,6 +3,10 @@ from settlement import Settlement
 from typing import List, Dict, Optional, Set
 from catan_types import Vertex, Edge
 from catan_gen import CatanConstants
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class DevelopmentCardError(Exception):
@@ -45,6 +49,7 @@ class Player:
 		for r in set(r_list):
 			num = r_list.count(r)
 			if r not in self._resources or self._resources[r] < num:
+				logger.warning("Cannot deduct resources %s from player", r_list)
 				return False
 		return True
 
