@@ -553,7 +553,7 @@ class Game():
             logger.info(f"{color} now has longest road with a road length of {road_length}")
             self._longest_road_length = road_length
             self._longest_road_player = p
-            logger.info(f"{p} now has longest road card")
+            logger.info(f"{p.get_color()} now has longest road card")
         if initial_placement:
             logger.info(f"{color} placed a road from {v1} to {v2}")
         else:

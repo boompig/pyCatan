@@ -212,12 +212,15 @@ class SmartPlacementAI(AI):
 				)
 			elif card == "road building":
 				places = [edge for edge in self.__get_available_road_placements(game)]
-				roads = random.sample(places, 2)
-				game.play_development_card(
-					self._color,
-					card,
-					{"roads": roads}
-				)
+				if len(places) < 2:
+					logger.warning("Too few available road placement sites left for AI. Not playing road building card.")
+				else:
+					roads = random.sample(places, 2)
+					game.play_development_card(
+						self._color,
+						card,
+						{"roads": roads}
+					)
 			else:
 				raise NotImplementedError()
 

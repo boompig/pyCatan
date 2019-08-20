@@ -49,7 +49,7 @@ class Player:
 		for r in set(r_list):
 			num = r_list.count(r)
 			if r not in self._resources or self._resources[r] < num:
-				logger.warning("Cannot deduct resources %s from player", r_list)
+				# logger.warning("Cannot deduct resources %s from player %s", r_list, self._color)
 				return False
 		return True
 
